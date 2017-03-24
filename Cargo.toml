@@ -1,0 +1,18 @@
+[package]
+name = "monkey-rust"
+version = "0.1.0"
+authors = ["Jérôme Mahuet <jerome.mahuet@gmail.com>"]
+
+[lib]
+name = "monkey_lib"
+path = "lib/monkey.rs"
+
+[[bin]]
+name = "monkey_repl"
+path = "repl/main.rs"
+
+[[bin]]
+name = "monkey_exe"
+path = "src/main.rs"
+
+[dependencies]
