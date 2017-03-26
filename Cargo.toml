@@ -16,3 +16,4 @@ name = "monkey_exe"
 path = "src/main.rs"
 
 [dependencies]
+nom = "^2.2"
