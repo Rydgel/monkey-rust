@@ -1,9 +1,10 @@
-#[derive(PartialEq, Debug)]
-enum Token {
+#[derive(PartialEq, Debug, Clone)]
+pub enum Token {
     Illegal,
     EOF,
     // identifier and literals
     Ident(String),
+    StringLiteral(String),
     IntLiteral(usize),
     // operators
     Assign,

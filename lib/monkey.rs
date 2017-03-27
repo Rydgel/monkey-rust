@@ -1,5 +1,6 @@
+#![feature(slice_concat_ext)]
 #[macro_use]
 
 extern crate nom;
 
-mod lexer;
+pub mod lexer;
