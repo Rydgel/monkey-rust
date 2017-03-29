@@ -2,13 +2,20 @@ use nom::*;
 use std::str;
 use std::str::FromStr;
 use std::str::Utf8Error;
-use std::slice::SliceConcatExt;
 
 mod token;
 use lexer::token::*;
 
 
 // operators
+named!(equal_operator<&[u8], Token>,
+  do_parse!(tag!("==") >> (Token::Equal))
+);
+
+named!(not_equal_operator<&[u8], Token>,
+  do_parse!(tag!("!=") >> (Token::NotEqual))
+);
+
 named!(assign_operator<&[u8], Token>,
   do_parse!(tag!("=") >> (Token::Assign))
 );
@@ -17,9 +24,41 @@ named!(plus_operator<&[u8], Token>,
   do_parse!(tag!("+") >> (Token::Plus))
 );
 
+named!(minus_operator<&[u8], Token>,
+  do_parse!(tag!("-") >> (Token::Minus))
+);
+
+named!(multiply_operator<&[u8], Token>,
+  do_parse!(tag!("*") >> (Token::Multiply))
+);
+
+named!(divide_operator<&[u8], Token>,
+  do_parse!(tag!("/") >> (Token::Divide))
+);
+
+named!(not_operator<&[u8], Token>,
+  do_parse!(tag!("!") >> (Token::Not))
+);
+
+named!(greater_operator<&[u8], Token>,
+  do_parse!(tag!(">") >> (Token::GreaterThan))
+);
+
+named!(lesser_operator<&[u8], Token>,
+  do_parse!(tag!("<") >> (Token::LessThan))
+);
+
 named!(lex_operator<&[u8], Token>, alt!(
+    equal_operator |
+    not_equal_operator |
     assign_operator |
-    plus_operator
+    plus_operator |
+    minus_operator |
+    multiply_operator |
+    divide_operator |
+    not_operator |
+    greater_operator |
+    lesser_operator
 ));
 
 
@@ -30,6 +69,10 @@ named!(comma_punctuation<&[u8], Token>,
 
 named!(semicolon_punctuation<&[u8], Token>,
   do_parse!(tag!(";") >> (Token::SemiColon))
+);
+
+named!(colon_punctuation<&[u8], Token>,
+  do_parse!(tag!(":") >> (Token::Colon))
 );
 
 named!(lparen_punctuation<&[u8], Token>,
@@ -48,13 +91,24 @@ named!(rbrace_punctuation<&[u8], Token>,
   do_parse!(tag!("}") >> (Token::RBrace))
 );
 
+named!(lbracket_punctuation<&[u8], Token>,
+  do_parse!(tag!("[") >> (Token::LBracket))
+);
+
+named!(rbracket_punctuation<&[u8], Token>,
+  do_parse!(tag!("]") >> (Token::RBracket))
+);
+
 named!(lex_punctuations<&[u8], Token>, alt!(
     comma_punctuation |
     semicolon_punctuation |
+    colon_punctuation |
     lparen_punctuation |
     rparen_punctuation |
     lbrace_punctuation |
-    rbrace_punctuation
+    rbrace_punctuation |
+    lbracket_punctuation |
+    rbracket_punctuation
 ));
 
 // Strings
@@ -92,7 +146,7 @@ named!(string<String>,
 named!(lex_string<&[u8], Token>,
     do_parse!(
         s: string >>
-        (Token::StringLiteral(s.to_owned()))
+        (Token::StringLiteral(s))
     )
 );
 
@@ -127,6 +181,11 @@ fn parse_reserved(c: &str, rest: Option<&str>) -> Token {
     match string.as_ref() {
         "let" => Token::Let,
         "fn" => Token::Function,
+        "if" => Token::If,
+        "else" => Token::Else,
+        "return" => Token::Return,
+        "true" => Token::BoolLiteral(true),
+        "false" => Token::BoolLiteral(false),
         _ => Token::Ident(string),
     }
 }
@@ -166,16 +225,50 @@ named!(lex_token<&[u8], Token>, alt!(
 
 named!(lex_tokens<&[u8], Vec<Token>>, ws!(many0!(lex_token)));
 
+macro_rules! tag_token (
+  ($i:expr, $tag: expr) => (
+    {
+        println!("lul before {:?}", $i);
+        let (i1, t1) = try_parse!($i, take!(1));
+        println!("lul after {:?}", i1);
+        if t1.tok.len() == 0 {
+            IResult::Incomplete(Needed::Size(1))
+        } else {
+            if t1.tok[0] == $tag {
+                IResult::Done(i1, t1)
+            } else {
+                println!("lul error");
+                IResult::Error(ErrorKind::Custom(20))
+            }
+        }
+    }
+  );
+);
+
+named!(parse_tokens<Tokens, Tokens>,
+    do_parse!(
+        tag_token!(Token::Minus) >>
+        a: take!(1) >>
+        tag_token!(Token::Plus) >>
+        (a)
+    )
+);
+
 
 pub struct Lexer;
 
 impl Lexer {
-    pub fn lex_tokens(bytes: &[u8]) -> Vec<Token> {
-        match lex_tokens(bytes) {
-            IResult::Done(_, result) =>
-                [&result[..], &vec![Token::EOF][..]].concat(),
-            _ => vec!(),
-        }
+    pub fn lex_tokens(bytes: &[u8]) -> IResult<&[u8], Vec<Token>> {
+        let vec = vec![Token::Minus, Token::Plus, Token::Plus];
+        let slices = vec.as_slice();
+        let tokens = Tokens { tok: slices, start: 0, end: vec.len() };
+
+        println!("{:?}", parse_tokens(tokens));
+
+        lex_tokens(bytes).map(|result|
+            [&result[..], &vec![Token::EOF][..]]
+                .concat()
+        )
     }
 }
 
@@ -186,7 +279,7 @@ mod tests {
     #[test]
     fn test_lexer1() {
         let input = &b"=+(){},;"[..];
-        let result = Lexer::lex_tokens(input);
+        let result = Lexer::lex_tokens(input).to_result().unwrap();
 
         let expected_results = vec![
             Token::Assign,
@@ -200,7 +293,7 @@ mod tests {
             Token::EOF,
         ];
 
-        assert_eq!(result, expected_results)
+        assert_eq!(result, expected_results);
     }
 
     #[test]
@@ -216,7 +309,7 @@ mod tests {
              let result = add(five, ten);"
             .as_bytes();
 
-        let result = Lexer::lex_tokens(input);
+        let result = Lexer::lex_tokens(input).to_result().unwrap();
 
         let expected_results = vec![
             Token::Let,
@@ -258,27 +351,148 @@ mod tests {
             Token::EOF,
         ];
 
-        assert_eq!(result, expected_results)
+        assert_eq!(result, expected_results);
+    }
+
+    #[test]
+    fn test_lexer3() {
+        let input =
+            "if (a == 10) {\
+                return a;\
+             } else if (a != 20) {\
+                return !a;\
+            } else if (a > 20) {\
+                return -30 / 40 * 50;\
+            } else if (a < 30) {\
+                return true;\
+            }\
+            return false;\
+            "
+            .as_bytes();
+
+        let result = Lexer::lex_tokens(input).to_result().unwrap();
+
+        let expected_results = vec![
+            Token::If,
+            Token::LParen,
+            Token::Ident("a".to_owned()),
+            Token::Equal,
+            Token::IntLiteral(10),
+            Token::RParen,
+            Token::LBrace,
+            Token::Return,
+            Token::Ident("a".to_owned()),
+            Token::SemiColon,
+            Token::RBrace,
+            Token::Else,
+            Token::If,
+            Token::LParen,
+            Token::Ident("a".to_owned()),
+            Token::NotEqual,
+            Token::IntLiteral(20),
+            Token::RParen,
+            Token::LBrace,
+            Token::Return,
+            Token::Not,
+            Token::Ident("a".to_owned()),
+            Token::SemiColon,
+            Token::RBrace,
+            Token::Else,
+            Token::If,
+            Token::LParen,
+            Token::Ident("a".to_owned()),
+            Token::GreaterThan,
+            Token::IntLiteral(20),
+            Token::RParen,
+            Token::LBrace,
+            Token::Return,
+            Token::Minus,
+            Token::IntLiteral(30),
+            Token::Divide,
+            Token::IntLiteral(40),
+            Token::Multiply,
+            Token::IntLiteral(50),
+            Token::SemiColon,
+            Token::RBrace,
+            Token::Else,
+            Token::If,
+            Token::LParen,
+            Token::Ident("a".to_owned()),
+            Token::LessThan,
+            Token::IntLiteral(30),
+            Token::RParen,
+            Token::LBrace,
+            Token::Return,
+            Token::BoolLiteral(true),
+            Token::SemiColon,
+            Token::RBrace,
+            Token::Return,
+            Token::BoolLiteral(false),
+            Token::SemiColon,
+            Token::EOF,
+        ];
+
+        assert_eq!(result, expected_results);
     }
 
     #[test]
     fn string_literals() {
-        let result = Lexer::lex_tokens(&b"\"foobar\""[..]);
+        let result = Lexer::lex_tokens(&b"\"foobar\""[..]).to_result().unwrap();
         assert_eq!(result, vec![Token::StringLiteral("foobar".to_owned()), Token::EOF]);
 
-        let result = Lexer::lex_tokens(&b"\"foo bar\""[..]);
+        let result = Lexer::lex_tokens(&b"\"foo bar\""[..]).to_result().unwrap();
         assert_eq!(result, vec![Token::StringLiteral("foo bar".to_owned()), Token::EOF]);
 
-        let result = Lexer::lex_tokens(&b"\"foo\nbar\""[..]);
+        let result = Lexer::lex_tokens(&b"\"foo\nbar\""[..]).to_result().unwrap();
         assert_eq!(result, vec![Token::StringLiteral("foo\nbar".to_owned()), Token::EOF]);
 
-        let result = Lexer::lex_tokens(&b"\"foo\tbar\""[..]);
+        let result = Lexer::lex_tokens(&b"\"foo\tbar\""[..]).to_result().unwrap();
         assert_eq!(result, vec![Token::StringLiteral("foo\tbar".to_owned()), Token::EOF]);
 
-        let result = Lexer::lex_tokens(&b"\"foo\\\"bar\""[..]);
+        let result = Lexer::lex_tokens(&b"\"foo\\\"bar\""[..]).to_result().unwrap();
         assert_eq!(result, vec![Token::StringLiteral("foo\"bar".to_owned()), Token::EOF]);
 
-        let result = Lexer::lex_tokens(&b"\"foo\\\"bar with \xf0\x9f\x92\x96 emojis\""[..]);
+        let result = Lexer::lex_tokens(&b"\"foo\\\"bar with \xf0\x9f\x92\x96 emojis\""[..]).to_result().unwrap();
         assert_eq!(result, vec![Token::StringLiteral("foo\"bar with 💖 emojis".to_owned()), Token::EOF]);
+    }
+
+    #[test]
+    fn id_with_numbers() {
+        let result = Lexer::lex_tokens(&b"hello2 hel301oo120"[..]).to_result().unwrap();
+        let expected = vec![
+            Token::Ident("hello2".to_owned()),
+            Token::Ident("hel301oo120".to_owned()),
+            Token::EOF,
+        ];
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn array_tokens() {
+        let result = Lexer::lex_tokens(&b"[1, 2];"[..]).to_result().unwrap();
+        let expected = vec![
+            Token::LBracket,
+            Token::IntLiteral(1),
+            Token::Comma,
+            Token::IntLiteral(2),
+            Token::RBracket,
+            Token::SemiColon,
+            Token::EOF
+        ];
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn hash_tokens() {
+        let result = Lexer::lex_tokens(&b"{\"hello\": \"world\"}"[..]).to_result().unwrap();
+        let expected = vec![
+            Token::LBrace,
+            Token::StringLiteral("hello".to_owned()),
+            Token::Colon,
+            Token::StringLiteral("world".to_owned()),
+            Token::RBrace,
+            Token::EOF,
+        ];
+        assert_eq!(result, expected);
     }
 }

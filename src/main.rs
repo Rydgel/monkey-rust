@@ -1,7 +1,8 @@
 extern crate monkey_lib;
+extern crate clap;
 
 use monkey_lib::lexer::*;
 
 fn main() {
-    println!("{:?}", Lexer::lex_tokens(b"let five = 5;"));
+
 }
