@@ -1,5 +1,5 @@
 use nom::*;
-use std::ops::{Range,RangeTo,RangeFrom,RangeFull};
+use std::ops::{Range, RangeTo, RangeFrom, RangeFull};
 use std::iter::Enumerate;
 
 #[derive(PartialEq, Debug, Clone)]
@@ -50,42 +50,64 @@ pub struct Tokens<'a> {
 }
 
 impl<'a> AsChar for &'a Token {
+    #[inline]
     fn as_char(self) -> char {
         '\0'
     }
+
+    #[inline]
     fn is_alpha(self) -> bool {
         false
     }
+
+    #[inline]
     fn is_alphanum(self) -> bool {
         false
     }
+
+    #[inline]
     fn is_dec_digit(self) -> bool {
         false
     }
+
+    #[inline]
     fn is_hex_digit(self) -> bool {
         false
     }
+
+    #[inline]
     fn is_oct_digit(self) -> bool {
         false
     }
 }
 
 impl AsChar for Token {
+    #[inline]
     fn as_char(self) -> char {
         '\0'
     }
+
+    #[inline]
     fn is_alpha(self) -> bool {
         false
     }
+
+    #[inline]
     fn is_alphanum(self) -> bool {
         false
     }
+
+    #[inline]
     fn is_dec_digit(self) -> bool {
         false
     }
+
+    #[inline]
     fn is_hex_digit(self) -> bool {
         false
     }
+
+    #[inline]
     fn is_oct_digit(self) -> bool {
         false
     }
@@ -106,6 +128,7 @@ impl InputLength for Token {
 }
 
 impl<'a> Slice<Range<usize>> for Tokens<'a> {
+    #[inline]
     fn slice(&self, range: Range<usize>) -> Self {
         Tokens {
             tok: self.tok.slice(range.clone()),
@@ -116,25 +139,28 @@ impl<'a> Slice<Range<usize>> for Tokens<'a> {
 }
 
 impl<'a> Slice<RangeTo<usize>> for Tokens<'a> {
+    #[inline]
     fn slice(&self, range: RangeTo<usize>) -> Self {
       self.slice(0..range.end)
     }
 }
 
 impl<'a> Slice<RangeFrom<usize>> for Tokens<'a> {
+    #[inline]
     fn slice(&self, range: RangeFrom<usize>) -> Self {
         self.slice(range.start..self.end - self.start)
     }
 }
 
 impl<'a> Slice<RangeFull> for Tokens<'a> {
-  fn slice(&self, _: RangeFull) -> Self {
-    Tokens {
-        tok: self.tok,
-        start: self.start,
-        end: self.end,
+    #[inline]
+    fn slice(&self, _: RangeFull) -> Self {
+        Tokens {
+            tok: self.tok,
+            start: self.start,
+            end: self.end,
+        }
     }
-  }
 }
 
 impl<'a> InputIter for Tokens<'a> {

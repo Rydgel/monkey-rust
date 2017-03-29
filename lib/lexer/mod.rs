@@ -208,10 +208,7 @@ named!(lex_integer<&[u8], Token>,
 
 // Illegal tokens
 named!(lex_illegal<&[u8], Token>,
-    do_parse!(
-        take!(1) >>
-        (Token::Illegal)
-    )
+    do_parse!(take!(1) >> (Token::Illegal))
 );
 
 named!(lex_token<&[u8], Token>, alt!(
@@ -226,19 +223,16 @@ named!(lex_token<&[u8], Token>, alt!(
 named!(lex_tokens<&[u8], Vec<Token>>, ws!(many0!(lex_token)));
 
 macro_rules! tag_token (
-  ($i:expr, $tag: expr) => (
+  ($i: expr, $tag: expr) => (
     {
-        println!("lul before {:?}", $i);
         let (i1, t1) = try_parse!($i, take!(1));
-        println!("lul after {:?}", i1);
         if t1.tok.len() == 0 {
             IResult::Incomplete(Needed::Size(1))
         } else {
             if t1.tok[0] == $tag {
                 IResult::Done(i1, t1)
             } else {
-                println!("lul error");
-                IResult::Error(ErrorKind::Custom(20))
+                IResult::Error(error_position!(ErrorKind::Tag, $i))
             }
         }
     }
@@ -259,7 +253,7 @@ pub struct Lexer;
 
 impl Lexer {
     pub fn lex_tokens(bytes: &[u8]) -> IResult<&[u8], Vec<Token>> {
-        let vec = vec![Token::Minus, Token::Plus, Token::Plus];
+        let vec = vec![Token::Minus, Token::Divide, Token::Plus];
         let slices = vec.as_slice();
         let tokens = Tokens { tok: slices, start: 0, end: vec.len() };
 
