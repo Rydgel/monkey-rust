@@ -1,15 +1,13 @@
-#[derive(PartialEq, Debug, Clone)]
-pub struct Program(pub BlockStmt);
+pub type Program = BlockStmt;
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Stmt {
     LetStmt(Ident, Expr),
-    ReturnStmt(Box<Stmt>),
+    ReturnStmt(Expr),
     ExprStmt(Expr),
 }
 
-#[derive(PartialEq, Debug, Clone)]
-pub struct BlockStmt(pub Vec<Stmt>);
+pub type BlockStmt = Vec<Stmt>;
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Expr {

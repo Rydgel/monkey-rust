@@ -6,6 +6,8 @@ use rustyline::completion::FilenameCompleter;
 use rustyline::error::ReadlineError;
 use rustyline::{Config, CompletionType, Editor};
 use monkey_lib::lexer::*;
+use monkey_lib::lexer::token::*;
+use monkey_lib::parser::*;
 use nom::*;
 
 mod repl;
@@ -40,10 +42,15 @@ fn main() {
         match readline {
             Ok(line) => {
                 rl.add_history_entry(line.as_ref());
-                let results = Lexer::lex_tokens(line.as_bytes());
-                match results {
-                    IResult::Done(_, r) => println!("{:?}", r),
-                    IResult::Error(_) => println!("Parsing error"),
+                let tokens = Lexer::lex_tokens(line.as_bytes());
+                match tokens {
+                    IResult::Done(_, r) => {
+                        println!("{:?}", r);
+                        let ttt = Tokens { tok: r.as_slice(), start: 0, end: r.len() };
+                        let parsed = Parser::parse_tokens(ttt);
+                        println!("{:?}", parsed);
+                    },
+                    IResult::Error(_) => println!("Lexer error"),
                     IResult::Incomplete(_) => println!("Incomplete parsing"),
                 }
             }

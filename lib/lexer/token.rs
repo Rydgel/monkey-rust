@@ -41,7 +41,7 @@ pub enum Token {
     RBracket,
 }
 
-#[derive(Clone,Copy,Debug)]
+#[derive(Clone,Copy,PartialEq,Debug)]
 #[repr(C)]
 pub struct Tokens<'a> {
     pub tok: &'a[Token],

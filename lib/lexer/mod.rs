@@ -3,7 +3,7 @@ use std::str;
 use std::str::FromStr;
 use std::str::Utf8Error;
 
-mod token;
+pub mod token;
 use lexer::token::*;
 
 
@@ -222,43 +222,11 @@ named!(lex_token<&[u8], Token>, alt_complete!(
 
 named!(lex_tokens<&[u8], Vec<Token>>, ws!(many0!(lex_token)));
 
-macro_rules! tag_token (
-  ($i: expr, $tag: expr) => (
-    {
-        let (i1, t1) = try_parse!($i, take!(1));
-        if t1.tok.len() == 0 {
-            IResult::Incomplete(Needed::Size(1))
-        } else {
-            if t1.tok[0] == $tag {
-                IResult::Done(i1, t1)
-            } else {
-                IResult::Error(error_position!(ErrorKind::Tag, $i))
-            }
-        }
-    }
-  );
-);
-
-named!(parse_tokens<Tokens, Tokens>,
-    do_parse!(
-        tag_token!(Token::Minus) >>
-        a: take!(1) >>
-        tag_token!(Token::Plus) >>
-        (a)
-    )
-);
-
 
 pub struct Lexer;
 
 impl Lexer {
     pub fn lex_tokens(bytes: &[u8]) -> IResult<&[u8], Vec<Token>> {
-        //let vec = vec![Token::Minus, Token::Divide, Token::Plus];
-        //let slices = vec.as_slice();
-        //let tokens = Tokens { tok: slices, start: 0, end: vec.len() };
-
-        //println!("{:?}", parse_tokens(tokens));
-
         lex_tokens(bytes).map(|result|
             [&result[..], &vec![Token::EOF][..]]
                 .concat()
