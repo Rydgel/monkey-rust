@@ -172,8 +172,6 @@ macro_rules! check(
   );
 );
 
-named!(take_1_char, flat_map!(take!(1), check!(is_alphabetic)));
-
 // Reserved or ident
 fn parse_reserved(c: &str, rest: Option<&str>) -> Token {
     let mut string = c.to_owned();
@@ -190,10 +188,12 @@ fn parse_reserved(c: &str, rest: Option<&str>) -> Token {
     }
 }
 
+named!(take_1_char, flat_map!(take!(1), check!(is_alphabetic)));
+
 named!(lex_reserved_ident<&[u8], Token>,
     do_parse!(
         c: map_res!(call!(take_1_char), str::from_utf8) >>
-        rest: opt!(map_res!(alphanumeric, str::from_utf8)) >>
+        rest: opt!(complete!(map_res!(alphanumeric, str::from_utf8))) >>
         (parse_reserved(c, rest))
     )
 );
@@ -211,7 +211,7 @@ named!(lex_illegal<&[u8], Token>,
     do_parse!(take!(1) >> (Token::Illegal))
 );
 
-named!(lex_token<&[u8], Token>, alt!(
+named!(lex_token<&[u8], Token>, alt_complete!(
     lex_operator |
     lex_punctuations |
     lex_string |
@@ -253,11 +253,11 @@ pub struct Lexer;
 
 impl Lexer {
     pub fn lex_tokens(bytes: &[u8]) -> IResult<&[u8], Vec<Token>> {
-        let vec = vec![Token::Minus, Token::Divide, Token::Plus];
-        let slices = vec.as_slice();
-        let tokens = Tokens { tok: slices, start: 0, end: vec.len() };
+        //let vec = vec![Token::Minus, Token::Divide, Token::Plus];
+        //let slices = vec.as_slice();
+        //let tokens = Tokens { tok: slices, start: 0, end: vec.len() };
 
-        println!("{:?}", parse_tokens(tokens));
+        //println!("{:?}", parse_tokens(tokens));
 
         lex_tokens(bytes).map(|result|
             [&result[..], &vec![Token::EOF][..]]
