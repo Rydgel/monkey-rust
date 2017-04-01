@@ -3,7 +3,6 @@ use nom::*;
 pub mod ast;
 use lexer::token::*;
 use parser::ast::*;
-use parser::ast::Expr::*;
 use parser::ast::Literal::*;
 
 
@@ -17,7 +16,7 @@ macro_rules! tag_token (
             if t1.tok[0] == $tag {
                 IResult::Done(i1, t1)
             } else {
-                IResult::Error(error_position!(ErrorKind::Tag, $i))
+                IResult::Error(error_position!(ErrorKind::Count, $i))
             }
         }
     }
@@ -82,12 +81,8 @@ named!(parse_program<Tokens, Program>,
     )
 );
 
-// todo
 named!(parse_expr<Tokens, Expr>,
-    do_parse!(
-        parse_literal!() >>
-        (LitExpr(IntLiteral(1)))
-    )
+    apply!(parse_pratt_expr, Precedence::PLowest)
 );
 
 named!(parse_stmt<Tokens, Stmt>, alt_complete!(
@@ -102,7 +97,7 @@ named!(parse_let_stmt<Tokens, Stmt>,
         ident: parse_ident!() >>
         tag_token!(Token::Assign) >>
         expr: parse_expr >>
-        opt!(tag_token!(Token::SemiColon)) >>
+        o: opt!(tag_token!(Token::SemiColon)) >>
         (Stmt::LetStmt(ident, expr))
     )
 );
@@ -255,6 +250,73 @@ fn parse_prefix_expr(input: Tokens) -> IResult<Tokens, Expr> {
     }
 }
 
+fn parse_pratt_expr(input: Tokens, precedence: Precedence) -> IResult<Tokens, Expr> {
+    do_parse!(input,
+        left: parse_atom_expr >>
+        i: apply!(go_parse_pratt_expr, precedence, left) >>
+        (i)
+    )
+}
+
+fn go_parse_pratt_expr(input: Tokens, precedence: Precedence, left: Expr) -> IResult<Tokens, Expr> {
+    let (i1, t1) = try_parse!(input, take!(1));
+    if t1.tok.len() == 0 {
+        IResult::Done(i1, left)
+    } else {
+        let preview = t1.tok[0].clone();
+        match infix_op(preview) {
+            (Precedence::PCall, _) if precedence < Precedence::PCall => {
+                let (i2, left2) = try_parse!(input, apply!(parse_call_expr, left));
+                go_parse_pratt_expr(i2, precedence, left2)
+            },
+            (Precedence::PIndex, _) if precedence < Precedence::PIndex => {
+                let (i2, left2) = try_parse!(input, apply!(parse_index_expr, left));
+                go_parse_pratt_expr(i2, precedence, left2)
+            },
+            (ref peek_precedence, _) if precedence < *peek_precedence => {
+                let (i2, left2) = try_parse!(input, apply!(parse_infix_expr, left));
+                go_parse_pratt_expr(i2, precedence, left2)
+            },
+            _ => IResult::Done(input, left)
+        }
+    }
+}
+
+fn parse_infix_expr(input: Tokens, left: Expr) -> IResult<Tokens, Expr> {
+    let (i1, t1) = try_parse!(input, take!(1));
+    if t1.tok.len() == 0 {
+        IResult::Error(error_position!(ErrorKind::Tag, input))
+    } else {
+        let next = t1.tok[0].clone();
+        let (precedence, maybe_op) = infix_op(next);
+        match maybe_op {
+            None => IResult::Error(error_position!(ErrorKind::Tag, input)),
+            Some(op) => {
+                let (i2, right) = try_parse!(i1, apply!(parse_pratt_expr, precedence));
+                IResult::Done(i2, Expr::InfixExpr(op, Box::new(left), Box::new(right)))
+            },
+        }
+    }
+}
+
+fn parse_call_expr(input: Tokens, fn_handle: Expr) -> IResult<Tokens, Expr> {
+    do_parse!(input,
+        tag_token!(Token::LParen) >>
+        args: parse_exprs >>
+        tag_token!(Token::RParen) >>
+        (Expr::CallExpr { function: Box::new(fn_handle), arguments: args })
+    )
+}
+
+fn parse_index_expr(input: Tokens, arr: Expr) -> IResult<Tokens, Expr> {
+    do_parse!(input,
+        tag_token!(Token::LBracket) >>
+        idx: parse_expr >>
+        tag_token!(Token::RBracket) >>
+        (Expr::IndexExpr { array: Box::new(arr), index: Box::new(idx) })
+    )
+}
+
 named!(parse_if_expr<Tokens, Expr>,
     do_parse!(
         tag_token!(Token::If) >>
@@ -290,7 +352,7 @@ named!(parse_params<Tokens, Vec<Ident>>,
     do_parse!(
         p: parse_ident!() >>
         ps: many0!(do_parse!(
-            tag_token!(Token::Function) >>
+            tag_token!(Token::Comma) >>
             i: parse_ident!()
             >> (i))
         ) >>
@@ -303,7 +365,6 @@ pub struct Parser;
 impl Parser {
     pub fn parse_tokens(tokens: Tokens) -> Program {
         let parsing = parse_program(tokens);
-        println!("{:?}", parsing);
         parsing.to_result().unwrap()
     }
 }

@@ -52,7 +52,7 @@ pub enum Infix {
     LessThan,
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, PartialOrd, Debug, Clone)]
 pub enum Precedence {
     PLowest,
     PEquals,

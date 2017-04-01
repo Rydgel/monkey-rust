@@ -45,10 +45,11 @@ fn main() {
                 let tokens = Lexer::lex_tokens(line.as_bytes());
                 match tokens {
                     IResult::Done(_, r) => {
-                        println!("{:?}", r);
+                        println!("Lexer: {:?}", r);
                         let ttt = Tokens { tok: r.as_slice(), start: 0, end: r.len() };
+                        println!("");
                         let parsed = Parser::parse_tokens(ttt);
-                        println!("{:?}", parsed);
+                        println!("Parser: {:?}", parsed);
                     },
                     IResult::Error(_) => println!("Lexer error"),
                     IResult::Incomplete(_) => println!("Incomplete parsing"),
