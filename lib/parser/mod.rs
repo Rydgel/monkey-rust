@@ -363,8 +363,19 @@ named!(parse_params<Tokens, Vec<Ident>>,
 pub struct Parser;
 
 impl Parser {
-    pub fn parse_tokens(tokens: Tokens) -> Program {
-        let parsing = parse_program(tokens);
-        parsing.to_result().unwrap()
+    pub fn parse_tokens(tokens: Tokens) -> IResult<Tokens, Program> {
+        parse_program(tokens)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use monkey_lib::lexer::*;
+    use monkey_lib::lexer::token::*;
+
+    #[test]
+    fn empty() {
+
     }
 }
