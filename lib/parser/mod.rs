@@ -371,11 +371,412 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use monkey_lib::lexer::*;
-    use monkey_lib::lexer::token::*;
+    use lexer::token::*;
+    use lexer::*;
 
     #[test]
     fn empty() {
+        let input = &b""[..];
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+        let expected_results: Program = vec!();
+        assert_eq!(result, expected_results);
+    }
 
+    #[test]
+    fn let_statements() {
+        let input =
+            "let x = 5;\
+             let y = 10;\
+             let foobar = 838383;\
+             let boo = true;\
+            "
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+        let expected_results: Program = vec!(
+            Stmt::LetStmt(Ident("x".to_owned()), Expr::LitExpr(Literal::IntLiteral(5))),
+            Stmt::LetStmt(Ident("y".to_owned()), Expr::LitExpr(Literal::IntLiteral(10))),
+            Stmt::LetStmt(Ident("foobar".to_owned()), Expr::LitExpr(Literal::IntLiteral(838383))),
+            Stmt::LetStmt(Ident("boo".to_owned()), Expr::LitExpr(Literal::BoolLiteral(true))),
+        );
+        assert_eq!(result, expected_results);
+    }
+
+    #[test]
+    fn return_statements() {
+        let input =
+            "return 5;\
+             return 10;\
+             return 838383;\
+             return true;\
+            "
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+        let expected_results: Program = vec!(
+            Stmt::ReturnStmt(Expr::LitExpr(Literal::IntLiteral(5))),
+            Stmt::ReturnStmt(Expr::LitExpr(Literal::IntLiteral(10))),
+            Stmt::ReturnStmt(Expr::LitExpr(Literal::IntLiteral(838383))),
+            Stmt::ReturnStmt(Expr::LitExpr(Literal::BoolLiteral(true))),
+        );
+        assert_eq!(result, expected_results);
+    }
+
+    #[test]
+    fn some_statements() {
+        let input =
+            "let x = 5;\
+             return 10;\
+             15;\
+             let y = 20;\
+             return false;\
+            "
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+        let expected_results: Program = vec!(
+            Stmt::LetStmt(Ident("x".to_owned()), Expr::LitExpr(Literal::IntLiteral(5))),
+            Stmt::ReturnStmt(Expr::LitExpr(Literal::IntLiteral(10))),
+            Stmt::ExprStmt(Expr::LitExpr(Literal::IntLiteral(15))),
+            Stmt::LetStmt(Ident("y".to_owned()), Expr::LitExpr(Literal::IntLiteral(20))),
+            Stmt::ReturnStmt(Expr::LitExpr(Literal::BoolLiteral(false))),
+        );
+        assert_eq!(result, expected_results);
+    }
+
+    #[test]
+    fn identifier() {
+        let input =
+            "foobar;\
+             foobar\
+            "
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+        let expected_results: Program = vec!(
+            Stmt::ExprStmt(Expr::IdentExpr(Ident("foobar".to_owned()))),
+            Stmt::ExprStmt(Expr::IdentExpr(Ident("foobar".to_owned()))),
+        );
+        assert_eq!(result, expected_results);
+    }
+
+    #[test]
+    fn prefix_expr() {
+        let input =
+            "-foobar;\
+             +10\
+             !true\
+            "
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+        let expected_results: Program = vec!(
+            Stmt::ExprStmt(Expr::PrefixExpr(Prefix::PrefixMinus, Box::new(Expr::IdentExpr(Ident("foobar".to_owned()))))),
+            Stmt::ExprStmt(Expr::PrefixExpr(Prefix::PrefixPlus, Box::new(Expr::LitExpr(Literal::IntLiteral(10))))),
+            Stmt::ExprStmt(Expr::PrefixExpr(Prefix::Not, Box::new(Expr::LitExpr(Literal::BoolLiteral(true))))),
+        );
+        assert_eq!(result, expected_results);
+    }
+
+    #[test]
+    fn prefix_expr2() {
+        let input =
+            "-(foobar);\
+             (+(10));\
+             (((!true)));\
+            "
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+        let expected_results: Program = vec!(
+            Stmt::ExprStmt(Expr::PrefixExpr(Prefix::PrefixMinus, Box::new(Expr::IdentExpr(Ident("foobar".to_owned()))))),
+            Stmt::ExprStmt(Expr::PrefixExpr(Prefix::PrefixPlus, Box::new(Expr::LitExpr(Literal::IntLiteral(10))))),
+            Stmt::ExprStmt(Expr::PrefixExpr(Prefix::Not, Box::new(Expr::LitExpr(Literal::BoolLiteral(true))))),
+        );
+        assert_eq!(result, expected_results);
+    }
+
+    #[test]
+    fn infix_expr() {
+        let input =
+            "10 + 20"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+        let expected_results: Program = vec!(
+            Stmt::ExprStmt(
+                Expr::InfixExpr(
+                    Infix::Plus,
+                    Box::new(Expr::LitExpr(Literal::IntLiteral(10))),
+                    Box::new(Expr::LitExpr(Literal::IntLiteral(20))),
+                )
+            ),
+        );
+        assert_eq!(result, expected_results);
+
+        let input =
+            "10 * 20"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+        let expected_results: Program = vec!(
+            Stmt::ExprStmt(
+                Expr::InfixExpr(
+                    Infix::Multiply,
+                    Box::new(Expr::LitExpr(Literal::IntLiteral(10))),
+                    Box::new(Expr::LitExpr(Literal::IntLiteral(20))),
+                )
+            ),
+        );
+        assert_eq!(result, expected_results);
+
+
+        let input =
+            "10 + 5 / -20 - (x + x)"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        let input =
+            "10 + (5 / (-20)) - (x + x)"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        assert_eq!(result, expected_results);
+
+
+        let input =
+            "10 + 5 / -20 - (x + x)"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+        let expected_results: Program = vec!(
+            Stmt::ExprStmt(
+                Expr::InfixExpr(
+                    Infix::Minus,
+                    Box::new(Expr::InfixExpr(
+                        Infix::Plus,
+                        Box::new(Expr::LitExpr(Literal::IntLiteral(10))),
+                        Box::new(Expr::InfixExpr(
+                            Infix::Divide,
+                            Box::new(Expr::LitExpr(Literal::IntLiteral(5))),
+                            Box::new(Expr::PrefixExpr(
+                                Prefix::PrefixMinus,
+                                Box::new(Expr::LitExpr(Literal::IntLiteral(20)))
+                            ))
+                        )),
+                    )),
+                    Box::new(Expr::InfixExpr(
+                        Infix::Plus,
+                        Box::new(Expr::IdentExpr(Ident("x".to_owned()))),
+                        Box::new(Expr::IdentExpr(Ident("x".to_owned()))),
+                    )),
+                )
+            ),
+        );
+        assert_eq!(result, expected_results);
+    }
+
+    #[test]
+    fn op_precedence() {
+        let input =
+            "!-a"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        let input =
+            "(!(-a))"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        assert_eq!(result, expected_results);
+
+        let input =
+            "a + b + c"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        let input =
+            "((a + b) + c)"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        assert_eq!(result, expected_results);
+
+
+        let input =
+            "a + b - c"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        let input =
+            "((a + b) - c)"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        assert_eq!(result, expected_results);
+
+
+
+        let input =
+            "a * b * c"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        let input =
+            "((a * b) * c)"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        assert_eq!(result, expected_results);
+
+
+        let input =
+            "a * b / c"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        let input =
+            "((a * b) / c)"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        assert_eq!(result, expected_results);
+
+
+        let input =
+            "a + b / c"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        let input =
+            "(a + (b / c))"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        assert_eq!(result, expected_results);
+
+
+        let input =
+            "a + b * c + d / e - f"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        let input =
+            "(((a + (b * c)) + (d / e)) - f)"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        assert_eq!(result, expected_results);
+
+
+        let input =
+            "3 + 4; -5 * 5"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        let input =
+            "(3 + 4);((-5) * 5)"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        assert_eq!(result, expected_results);
+
+
+        let input =
+            "5 > 4 == 3 < 4"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        let input =
+            "((5 > 4) == (3 < 4))"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        assert_eq!(result, expected_results);
+
+
+        let input =
+            "5 < 4 != 3 > 4"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        let input =
+            "((5 < 4) != (3 > 4))"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        assert_eq!(result, expected_results);
+
+
+        let input =
+            "3 + 4 * 5 == 3 * 1 + 4 * 5"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        let input =
+            "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"
+            .as_bytes();
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        assert_eq!(result, expected_results);
     }
 }

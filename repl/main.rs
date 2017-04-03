@@ -42,13 +42,13 @@ fn main() {
         match readline {
             Ok(line) => {
                 rl.add_history_entry(line.as_ref());
-                let tokens = Lexer::lex_tokens(line.as_bytes());
-                match tokens {
+                let lex_tokens = Lexer::lex_tokens(line.as_bytes());
+                match lex_tokens {
                     IResult::Done(_, r) => {
                         println!("Lexer: {:?}", r);
-                        let ttt = Tokens { tok: r.as_slice(), start: 0, end: r.len() };
+                        let tokens = Tokens::new(&r);
                         println!("");
-                        let parsed = Parser::parse_tokens(ttt);
+                        let parsed = Parser::parse_tokens(tokens);
                         println!("Parser: {:?}", parsed);
                     },
                     IResult::Error(_) => println!("Lexer error"),

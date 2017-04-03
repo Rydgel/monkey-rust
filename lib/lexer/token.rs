@@ -49,6 +49,16 @@ pub struct Tokens<'a> {
     pub end: usize,
 }
 
+impl<'a> Tokens<'a> {
+    pub fn new(vec: &'a Vec<Token>) -> Self {
+        Tokens {
+            tok: vec.as_slice(),
+            start: 0,
+            end: vec.len(),
+        }
+    }
+}
+
 impl<'a> AsChar for &'a Token {
     #[inline]
     fn as_char(self) -> char {
