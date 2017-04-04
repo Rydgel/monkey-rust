@@ -22,6 +22,8 @@ pub enum Token {
     Multiply,
     Equal,
     NotEqual,
+    GreaterThanEqual,
+    LessThanEqual,
     GreaterThan,
     LessThan,
     Not,

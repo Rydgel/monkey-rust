@@ -61,6 +61,8 @@ fn infix_op(t: Token) -> (Precedence, Option<Infix>) {
     match t {
         Token::Equal => (Precedence::PEquals, Some(Infix::Equal)),
         Token::NotEqual => (Precedence::PEquals, Some(Infix::NotEqual)),
+        Token::LessThanEqual => (Precedence::PLessGreater, Some(Infix::LessThanEqual)),
+        Token::GreaterThanEqual => (Precedence::PLessGreater, Some(Infix::GreaterThanEqual)),
         Token::LessThan => (Precedence::PLessGreater, Some(Infix::LessThan)),
         Token::GreaterThan => (Precedence::PLessGreater, Some(Infix::GreaterThan)),
         Token::Plus => (Precedence::PSum, Some(Infix::Plus)),
@@ -374,14 +376,28 @@ mod tests {
     use lexer::token::*;
     use lexer::*;
 
-    #[test]
-    fn empty() {
-        let input = &b""[..];
+    fn assert_input_with_program(input: &[u8], expected_results: Program) {
         let r = Lexer::lex_tokens(input).to_result().unwrap();
         let tokens = Tokens::new(&r);
         let result = Parser::parse_tokens(tokens).to_result().unwrap();
-        let expected_results: Program = vec!();
         assert_eq!(result, expected_results);
+    }
+
+    fn compare_inputs(input: &[u8], input2: &[u8]) {
+        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        let r = Lexer::lex_tokens(input2).to_result().unwrap();
+        let tokens = Tokens::new(&r);
+        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
+
+        assert_eq!(result, expected_results);
+    }
+
+    #[test]
+    fn empty() {
+        assert_input_with_program(&b""[..], vec!());
     }
 
     #[test]
@@ -393,16 +409,15 @@ mod tests {
              let boo = true;\
             "
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
-        let expected_results: Program = vec!(
+
+        let program: Program = vec!(
             Stmt::LetStmt(Ident("x".to_owned()), Expr::LitExpr(Literal::IntLiteral(5))),
             Stmt::LetStmt(Ident("y".to_owned()), Expr::LitExpr(Literal::IntLiteral(10))),
             Stmt::LetStmt(Ident("foobar".to_owned()), Expr::LitExpr(Literal::IntLiteral(838383))),
             Stmt::LetStmt(Ident("boo".to_owned()), Expr::LitExpr(Literal::BoolLiteral(true))),
         );
-        assert_eq!(result, expected_results);
+
+        assert_input_with_program(input, program);
     }
 
     #[test]
@@ -414,16 +429,15 @@ mod tests {
              return true;\
             "
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
-        let expected_results: Program = vec!(
+
+        let program: Program = vec!(
             Stmt::ReturnStmt(Expr::LitExpr(Literal::IntLiteral(5))),
             Stmt::ReturnStmt(Expr::LitExpr(Literal::IntLiteral(10))),
             Stmt::ReturnStmt(Expr::LitExpr(Literal::IntLiteral(838383))),
             Stmt::ReturnStmt(Expr::LitExpr(Literal::BoolLiteral(true))),
         );
-        assert_eq!(result, expected_results);
+
+        assert_input_with_program(input, program);
     }
 
     #[test]
@@ -436,17 +450,16 @@ mod tests {
              return false;\
             "
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
-        let expected_results: Program = vec!(
+
+        let program: Program = vec!(
             Stmt::LetStmt(Ident("x".to_owned()), Expr::LitExpr(Literal::IntLiteral(5))),
             Stmt::ReturnStmt(Expr::LitExpr(Literal::IntLiteral(10))),
             Stmt::ExprStmt(Expr::LitExpr(Literal::IntLiteral(15))),
             Stmt::LetStmt(Ident("y".to_owned()), Expr::LitExpr(Literal::IntLiteral(20))),
             Stmt::ReturnStmt(Expr::LitExpr(Literal::BoolLiteral(false))),
         );
-        assert_eq!(result, expected_results);
+
+        assert_input_with_program(input, program);
     }
 
     #[test]
@@ -456,14 +469,13 @@ mod tests {
              foobar\
             "
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
-        let expected_results: Program = vec!(
+
+        let program: Program = vec!(
             Stmt::ExprStmt(Expr::IdentExpr(Ident("foobar".to_owned()))),
             Stmt::ExprStmt(Expr::IdentExpr(Ident("foobar".to_owned()))),
         );
-        assert_eq!(result, expected_results);
+
+        assert_input_with_program(input, program);
     }
 
     #[test]
@@ -474,15 +486,14 @@ mod tests {
              !true\
             "
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
-        let expected_results: Program = vec!(
+
+        let program: Program = vec!(
             Stmt::ExprStmt(Expr::PrefixExpr(Prefix::PrefixMinus, Box::new(Expr::IdentExpr(Ident("foobar".to_owned()))))),
             Stmt::ExprStmt(Expr::PrefixExpr(Prefix::PrefixPlus, Box::new(Expr::LitExpr(Literal::IntLiteral(10))))),
             Stmt::ExprStmt(Expr::PrefixExpr(Prefix::Not, Box::new(Expr::LitExpr(Literal::BoolLiteral(true))))),
         );
-        assert_eq!(result, expected_results);
+
+        assert_input_with_program(input, program);
     }
 
     #[test]
@@ -493,15 +504,14 @@ mod tests {
              (((!true)));\
             "
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
-        let expected_results: Program = vec!(
+
+        let program: Program = vec!(
             Stmt::ExprStmt(Expr::PrefixExpr(Prefix::PrefixMinus, Box::new(Expr::IdentExpr(Ident("foobar".to_owned()))))),
             Stmt::ExprStmt(Expr::PrefixExpr(Prefix::PrefixPlus, Box::new(Expr::LitExpr(Literal::IntLiteral(10))))),
             Stmt::ExprStmt(Expr::PrefixExpr(Prefix::Not, Box::new(Expr::LitExpr(Literal::BoolLiteral(true))))),
         );
-        assert_eq!(result, expected_results);
+
+        assert_input_with_program(input, program);
     }
 
     #[test]
@@ -509,10 +519,8 @@ mod tests {
         let input =
             "10 + 20"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
-        let expected_results: Program = vec!(
+
+        let program: Program = vec!(
             Stmt::ExprStmt(
                 Expr::InfixExpr(
                     Infix::Plus,
@@ -521,15 +529,14 @@ mod tests {
                 )
             ),
         );
-        assert_eq!(result, expected_results);
+
+        assert_input_with_program(input, program);
 
         let input =
             "10 * 20"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
-        let expected_results: Program = vec!(
+
+        let program: Program = vec!(
             Stmt::ExprStmt(
                 Expr::InfixExpr(
                     Infix::Multiply,
@@ -538,33 +545,26 @@ mod tests {
                 )
             ),
         );
-        assert_eq!(result, expected_results);
+
+        assert_input_with_program(input, program);
 
 
         let input =
             "10 + 5 / -20 - (x + x)"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        let input =
+        let input2 =
             "10 + (5 / (-20)) - (x + x)"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        assert_eq!(result, expected_results);
+        compare_inputs(input, input2);
 
 
         let input =
             "10 + 5 / -20 - (x + x)"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
-        let expected_results: Program = vec!(
+
+        let program: Program = vec!(
             Stmt::ExprStmt(
                 Expr::InfixExpr(
                     Infix::Minus,
@@ -588,7 +588,8 @@ mod tests {
                 )
             ),
         );
-        assert_eq!(result, expected_results);
+
+        assert_input_with_program(input, program);
     }
 
     #[test]
@@ -596,187 +597,612 @@ mod tests {
         let input =
             "!-a"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        let input =
+        let input2 =
             "(!(-a))"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        assert_eq!(result, expected_results);
+        compare_inputs(input, input2);
 
         let input =
             "a + b + c"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        let input =
+        let input2 =
             "((a + b) + c)"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        assert_eq!(result, expected_results);
+        compare_inputs(input, input2);
 
 
         let input =
             "a + b - c"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        let input =
+        let input2 =
             "((a + b) - c)"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        assert_eq!(result, expected_results);
+        compare_inputs(input, input2);
 
 
 
         let input =
             "a * b * c"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        let input =
+        let input2 =
             "((a * b) * c)"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        assert_eq!(result, expected_results);
+        compare_inputs(input, input2);
 
 
         let input =
             "a * b / c"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        let input =
+        let input2 =
             "((a * b) / c)"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        assert_eq!(result, expected_results);
+        compare_inputs(input, input2);
 
 
         let input =
             "a + b / c"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        let input =
+        let input2 =
             "(a + (b / c))"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        assert_eq!(result, expected_results);
+        compare_inputs(input, input2);
 
 
         let input =
             "a + b * c + d / e - f"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        let input =
+        let input2 =
             "(((a + (b * c)) + (d / e)) - f)"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        assert_eq!(result, expected_results);
+        compare_inputs(input, input2);
 
 
         let input =
             "3 + 4; -5 * 5"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        let input =
+        let input2 =
             "(3 + 4);((-5) * 5)"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        assert_eq!(result, expected_results);
+        compare_inputs(input, input2);
 
 
         let input =
             "5 > 4 == 3 < 4"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        let input =
+        let input2 =
             "((5 > 4) == (3 < 4))"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        assert_eq!(result, expected_results);
-
+        compare_inputs(input, input2);
 
         let input =
             "5 < 4 != 3 > 4"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        let input =
+        let input2 =
             "((5 < 4) != (3 > 4))"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        assert_eq!(result, expected_results);
-
+        compare_inputs(input, input2);
 
         let input =
             "3 + 4 * 5 == 3 * 1 + 4 * 5"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        let input =
+        let input2 =
             "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"
             .as_bytes();
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
-        let tokens = Tokens::new(&r);
-        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
 
-        assert_eq!(result, expected_results);
+        compare_inputs(input, input2);
+    }
+
+    #[test]
+    fn if_expr() {
+        let input =
+            "if (x < y) { x }"
+            .as_bytes();
+
+        let program: Program = vec!(
+            Stmt::ExprStmt(
+                Expr::IfExpr {
+                    cond: Box::new(Expr::InfixExpr(
+                        Infix::LessThan,
+                        Box::new(Expr::IdentExpr(Ident("x".to_owned()))),
+                        Box::new(Expr::IdentExpr(Ident("y".to_owned()))),
+                    )),
+                    consequence: vec!(
+                        Stmt::ExprStmt(Expr::IdentExpr(Ident("x".to_owned()))),
+                    ),
+                    alternative: None,
+                }
+            ),
+        );
+
+        assert_input_with_program(input, program);
+
+        let input =
+            "if (x < y) { x } else { y }"
+            .as_bytes();
+
+        let program: Program = vec!(
+            Stmt::ExprStmt(
+                Expr::IfExpr {
+                    cond: Box::new(Expr::InfixExpr(
+                        Infix::LessThan,
+                        Box::new(Expr::IdentExpr(Ident("x".to_owned()))),
+                        Box::new(Expr::IdentExpr(Ident("y".to_owned()))),
+                    )),
+                    consequence: vec!(
+                        Stmt::ExprStmt(Expr::IdentExpr(Ident("x".to_owned()))),
+                    ),
+                    alternative: Some(
+                        vec!(
+                            Stmt::ExprStmt(Expr::IdentExpr(Ident("y".to_owned()))),
+                        ),
+                    ),
+                }
+            ),
+        );
+
+        assert_input_with_program(input, program);
+    }
+
+
+    #[test]
+    fn function_expr() {
+        let input =
+            "fn() {\
+                return foobar + barfoo;\
+            }\
+            "
+            .as_bytes();
+
+        let program: Program = vec!(
+            Stmt::ExprStmt(
+                Expr::FnExpr {
+                    params: vec!(),
+                    body: vec!(
+                        Stmt::ReturnStmt(
+                            Expr::InfixExpr(
+                                Infix::Plus,
+                                Box::new(Expr::IdentExpr(Ident("foobar".to_owned()))),
+                                Box::new(Expr::IdentExpr(Ident("barfoo".to_owned()))),
+                            )
+                        ),
+                    ),
+                }
+            ),
+        );
+
+        assert_input_with_program(input, program);
+
+
+        let input =
+            "fn(x, y) {\
+                return x + y;\
+            }\
+            "
+            .as_bytes();
+
+        let program: Program = vec!(
+            Stmt::ExprStmt(
+                Expr::FnExpr {
+                    params: vec!(
+                        Ident("x".to_owned()),
+                        Ident("y".to_owned()),
+                    ),
+                    body: vec!(
+                        Stmt::ReturnStmt(
+                            Expr::InfixExpr(
+                                Infix::Plus,
+                                Box::new(Expr::IdentExpr(Ident("x".to_owned()))),
+                                Box::new(Expr::IdentExpr(Ident("y".to_owned()))),
+                            )
+                        ),
+                    ),
+                }
+            ),
+        );
+
+        assert_input_with_program(input, program);
+
+
+        let input =
+            "fn() {
+                return fn (x, y, z, zz) { return x >= y; };
+             }
+            "
+            .as_bytes();
+
+        let program: Program = vec!(
+            Stmt::ExprStmt(
+                Expr::FnExpr {
+                    params: vec!(),
+                    body: vec!(
+                        Stmt::ReturnStmt(
+                            Expr::FnExpr {
+                                params: vec!(
+                                    Ident("x".to_owned()),
+                                    Ident("y".to_owned()),
+                                    Ident("z".to_owned()),
+                                    Ident("zz".to_owned()),
+                                ),
+                                body: vec!(
+                                    Stmt::ReturnStmt(
+                                        Expr::InfixExpr(
+                                            Infix::GreaterThanEqual,
+                                            Box::new(Expr::IdentExpr(Ident("x".to_owned()))),
+                                            Box::new(Expr::IdentExpr(Ident("y".to_owned()))),
+                                        )
+                                    )
+                                )
+                            }
+                        ),
+                    ),
+                }
+            ),
+        );
+
+        assert_input_with_program(input, program);
+    }
+
+    #[test]
+    fn function_call_expr() {
+        let input =
+            "add(2, 3);\
+             add(a, b, 1, 2 * 3, other(4 + 5), add(6, 7 * 8));\
+             fn(a, b) { return a + b; }(1, 2);\
+            "
+            .as_bytes();
+
+        let program: Program = vec!(
+            Stmt::ExprStmt(
+                Expr::CallExpr {
+                    function: Box::new(Expr::IdentExpr(Ident("add".to_owned()))),
+                    arguments: vec!(
+                        Box::new(Expr::LitExpr(Literal::IntLiteral(2))),
+                        Box::new(Expr::LitExpr(Literal::IntLiteral(3))),
+                    ),
+                }
+            ),
+            Stmt::ExprStmt(
+                Expr::CallExpr {
+                    function: Box::new(Expr::IdentExpr(Ident("add".to_owned()))),
+                    arguments: vec!(
+                        Box::new(Expr::IdentExpr(Ident("a".to_owned()))),
+                        Box::new(Expr::IdentExpr(Ident("b".to_owned()))),
+                        Box::new(Expr::LitExpr(Literal::IntLiteral(1))),
+                        Box::new(Expr::InfixExpr(
+                            Infix::Multiply,
+                            Box::new(Expr::LitExpr(Literal::IntLiteral(2))),
+                            Box::new(Expr::LitExpr(Literal::IntLiteral(3))),
+                        )),
+                        Box::new(Expr::CallExpr {
+                            function: Box::new(Expr::IdentExpr(Ident("other".to_owned()))),
+                            arguments: vec!(
+                                Box::new(Expr::InfixExpr(
+                                    Infix::Plus,
+                                    Box::new(Expr::LitExpr(Literal::IntLiteral(4))),
+                                    Box::new(Expr::LitExpr(Literal::IntLiteral(5))),
+                                ))
+                            ),
+                        }),
+                        Box::new(Expr::CallExpr {
+                            function: Box::new(Expr::IdentExpr(Ident("add".to_owned()))),
+                            arguments: vec!(
+                                Box::new(Expr::LitExpr(Literal::IntLiteral(6))),
+                                Box::new(Expr::InfixExpr(
+                                    Infix::Multiply,
+                                    Box::new(Expr::LitExpr(Literal::IntLiteral(7))),
+                                    Box::new(Expr::LitExpr(Literal::IntLiteral(8))),
+                                )),
+                            )
+                        }),
+                    ),
+                }
+            ),
+            Stmt::ExprStmt(
+                Expr::CallExpr {
+                    function: Box::new(
+                        Expr::FnExpr {
+                            params: vec!(
+                                Ident("a".to_owned()),
+                                Ident("b".to_owned()),
+                            ),
+                            body: vec!(
+                                Stmt::ReturnStmt(
+                                    Expr::InfixExpr(
+                                        Infix::Plus,
+                                        Box::new(Expr::IdentExpr(Ident("a".to_owned()))),
+                                        Box::new(Expr::IdentExpr(Ident("b".to_owned()))),
+                                    )
+                                )
+                            )
+                        }
+                    ),
+                    arguments: vec!(
+                        Box::new(Expr::LitExpr(Literal::IntLiteral(1))),
+                        Box::new(Expr::LitExpr(Literal::IntLiteral(2))),
+                    )
+                }
+            ),
+        );
+
+        assert_input_with_program(input, program);
+    }
+
+    #[test]
+    fn strings() {
+        let input = &b"\"foobar\""[..];
+
+        let program: Program = vec!(
+            Stmt::ExprStmt(
+                Expr::LitExpr(
+                    Literal::StringLiteral("foobar".to_owned())
+                )
+            ),
+        );
+
+        assert_input_with_program(input, program);
+
+        let input = &b"\"foo bar\""[..];
+
+        let program: Program = vec!(
+            Stmt::ExprStmt(
+                Expr::LitExpr(
+                    Literal::StringLiteral("foo bar".to_owned())
+                )
+            ),
+        );
+
+        assert_input_with_program(input, program);
+
+        let input = &b"\"foo\nbar\""[..];
+
+        let program: Program = vec!(
+            Stmt::ExprStmt(
+                Expr::LitExpr(
+                    Literal::StringLiteral("foo\nbar".to_owned())
+                )
+            ),
+        );
+
+        assert_input_with_program(input, program);
+
+        let input = &b"\"foo\tbar\""[..];
+
+        let program: Program = vec!(
+            Stmt::ExprStmt(
+                Expr::LitExpr(
+                    Literal::StringLiteral("foo\tbar".to_owned())
+                )
+            ),
+        );
+
+        assert_input_with_program(input, program);
+
+        let input = &b"\"foo\\\"bar\""[..];
+
+        let program: Program = vec!(
+            Stmt::ExprStmt(
+                Expr::LitExpr(
+                    Literal::StringLiteral("foo\"bar".to_owned())
+                )
+            ),
+        );
+
+        assert_input_with_program(input, program);
+    }
+
+    #[test]
+    fn arrays() {
+        let input = &b"[1, 2 * 2, 3 + 3]"[..];
+
+        let program: Program = vec!(
+            Stmt::ExprStmt(
+                Expr::ArrayExpr(vec!(
+                    Box::new(Expr::LitExpr(Literal::IntLiteral(1))),
+                    Box::new(
+                        Expr::InfixExpr(
+                            Infix::Multiply,
+                            Box::new(Expr::LitExpr(Literal::IntLiteral(2))),
+                            Box::new(Expr::LitExpr(Literal::IntLiteral(2)))
+                        )
+                    ),
+                    Box::new(
+                        Expr::InfixExpr(
+                            Infix::Plus,
+                            Box::new(Expr::LitExpr(Literal::IntLiteral(3))),
+                            Box::new(Expr::LitExpr(Literal::IntLiteral(3)))
+                        )
+                    ),
+                ))
+            ),
+        );
+
+        assert_input_with_program(input, program);
+
+
+        let input = &b"myArray[1 + 1]"[..];
+
+        let program: Program = vec!(
+            Stmt::ExprStmt(
+                Expr::IndexExpr {
+                    array: Box::new(Expr::IdentExpr(Ident("myArray".to_owned()))),
+                    index: Box::new(
+                        Expr::InfixExpr(
+                            Infix::Plus,
+                            Box::new(Expr::LitExpr(Literal::IntLiteral(1))),
+                            Box::new(Expr::LitExpr(Literal::IntLiteral(1)))
+                        )
+                    ),
+                }
+            ),
+        );
+
+        assert_input_with_program(input, program);
+    }
+
+
+    #[test]
+    fn array_precedence() {
+        let input =
+            "a * [1, 2, 3, 4][b * c] * d"
+            .as_bytes();
+
+        let input2 =
+            "((a * ([1, 2, 3, 4][b * c])) * d)"
+            .as_bytes();
+
+        compare_inputs(input, input2);
+
+
+        let input =
+            "add(a * b[2], b[1], 2 * [1, 2][1])"
+            .as_bytes();
+
+        let input2 =
+            "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))"
+            .as_bytes();
+
+        compare_inputs(input, input2);
+    }
+
+
+    #[test]
+    fn hash() {
+        let input = &b"{}"[..];
+
+        let program: Program = vec!(
+            Stmt::ExprStmt(
+                Expr::HashExpr(
+                    vec!()
+                )
+            ),
+        );
+
+        assert_input_with_program(input, program);
+
+
+        let input = &b"{\"one\": 1, \"two\": 2, \"three\": 3}"[..];
+
+        let program: Program = vec!(
+            Stmt::ExprStmt(
+                Expr::HashExpr(vec!(
+                    (
+                        Literal::StringLiteral("one".to_owned()),
+                        Box::new(Expr::LitExpr(Literal::IntLiteral(1)))
+                    ),
+                    (
+                        Literal::StringLiteral("two".to_owned()),
+                        Box::new(Expr::LitExpr(Literal::IntLiteral(2)))
+                    ),
+                    (
+                        Literal::StringLiteral("three".to_owned()),
+                        Box::new(Expr::LitExpr(Literal::IntLiteral(3)))
+                    ),
+                ))
+            ),
+        );
+
+        assert_input_with_program(input, program);
+
+
+        let input = &b"{4: 1, 5: 2, 6: 3}"[..];
+
+        let program: Program = vec!(
+            Stmt::ExprStmt(
+                Expr::HashExpr(vec!(
+                    (
+                        Literal::IntLiteral(4),
+                        Box::new(Expr::LitExpr(Literal::IntLiteral(1)))
+                    ),
+                    (
+                        Literal::IntLiteral(5),
+                        Box::new(Expr::LitExpr(Literal::IntLiteral(2)))
+                    ),
+                    (
+                        Literal::IntLiteral(6),
+                        Box::new(Expr::LitExpr(Literal::IntLiteral(3)))
+                    ),
+                ))
+            ),
+        );
+
+        assert_input_with_program(input, program);
+
+
+
+        let input = &b"{true: 1, false: 2}"[..];
+
+        let program: Program = vec!(
+            Stmt::ExprStmt(
+                Expr::HashExpr(vec!(
+                    (
+                        Literal::BoolLiteral(true),
+                        Box::new(Expr::LitExpr(Literal::IntLiteral(1)))
+                    ),
+                    (
+                        Literal::BoolLiteral(false),
+                        Box::new(Expr::LitExpr(Literal::IntLiteral(2)))
+                    ),
+                ))
+            ),
+        );
+
+        assert_input_with_program(input, program);
+
+
+        let input = &b"{\"one\": 0 + 1, \"two\": 10 - 8, \"three\": 15/5}"[..];
+
+        let program: Program = vec!(
+            Stmt::ExprStmt(
+                Expr::HashExpr(vec!(
+                    (
+                        Literal::StringLiteral("one".to_owned()),
+                        Box::new(Expr::InfixExpr(
+                            Infix::Plus,
+                            Box::new(Expr::LitExpr(Literal::IntLiteral(0))),
+                            Box::new(Expr::LitExpr(Literal::IntLiteral(1))),
+                        ))
+                    ),
+                    (
+                        Literal::StringLiteral("two".to_owned()),
+                        Box::new(Expr::InfixExpr(
+                            Infix::Minus,
+                            Box::new(Expr::LitExpr(Literal::IntLiteral(10))),
+                            Box::new(Expr::LitExpr(Literal::IntLiteral(8))),
+                        ))
+                    ),
+                    (
+                        Literal::StringLiteral("three".to_owned()),
+                        Box::new(Expr::InfixExpr(
+                            Infix::Divide,
+                            Box::new(Expr::LitExpr(Literal::IntLiteral(15))),
+                            Box::new(Expr::LitExpr(Literal::IntLiteral(5))),
+                        ))
+                    ),
+                ))
+            ),
+        );
+
+        assert_input_with_program(input, program);
     }
 }

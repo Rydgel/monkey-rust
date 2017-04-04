@@ -40,6 +40,14 @@ named!(not_operator<&[u8], Token>,
   do_parse!(tag!("!") >> (Token::Not))
 );
 
+named!(greater_operator_equal<&[u8], Token>,
+  do_parse!(tag!(">=") >> (Token::GreaterThanEqual))
+);
+
+named!(lesser_operator_equal<&[u8], Token>,
+  do_parse!(tag!("<=") >> (Token::LessThanEqual))
+);
+
 named!(greater_operator<&[u8], Token>,
   do_parse!(tag!(">") >> (Token::GreaterThan))
 );
@@ -57,6 +65,8 @@ named!(lex_operator<&[u8], Token>, alt!(
     multiply_operator |
     divide_operator |
     not_operator |
+    greater_operator_equal |
+    lesser_operator_equal |
     greater_operator |
     lesser_operator
 ));
