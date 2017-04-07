@@ -30,7 +30,7 @@ pub enum Literal {
     StringLiteral(String),
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Eq, Clone)]
 pub struct Ident(pub String);
 
 #[derive(PartialEq, Debug, Clone)]
