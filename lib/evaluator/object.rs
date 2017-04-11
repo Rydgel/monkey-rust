@@ -18,6 +18,22 @@ pub enum Object {
     Error(String),
 }
 
+impl Object {
+    pub fn is_returned(&self) -> bool {
+        match self {
+            &Object::ReturnValue(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn returned(&self) -> Self {
+        match self {
+            &Object::ReturnValue(box ref o) => o.clone(),
+            &ref o => o.clone(),
+        }
+    }
+}
+
 type BuiltinFunction = fn(Vec<Object>) -> Object;
 
 impl fmt::Display for Object {
@@ -52,22 +68,6 @@ impl fmt::Display for Object {
         }
     }
 }
-
-/*impl PartialEq for Object {
-    fn eq(&self, other: &Object) -> bool {
-        match (self, other) {
-            (&Object::Integer(ref i1), &Object::Integer(ref i2))
-                => *i1 == *i2,
-            (&Object::Boolean(ref b1), &Object::Boolean(ref b2))
-                => *b1 == *b2,
-            (&Object::String(ref s1), &Object::String(ref s2))
-                => *s1 == *s2,
-            (&Object::Array(ref v1), &Object::Array(ref v2))
-                => *v1 == *v2,
-            _ => false,
-        }
-    }
-}*/
 
 impl Eq for Object { }
 
