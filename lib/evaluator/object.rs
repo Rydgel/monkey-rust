@@ -6,13 +6,13 @@ use evaluator::environment::*;
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Object {
-    Integer(usize),
+    Integer(i64),
     Boolean(bool),
     String(String),
     Array(Vec<Object>),
     Hash(HashMap<Object, Object>),
     Function(Vec<Ident>, BlockStmt, Environment),
-    Builtin(String, BuiltinFunction),
+    Builtin(String, usize, BuiltinFunction),
     Null,
     ReturnValue(Box<Object>),
     Error(String),
@@ -34,7 +34,7 @@ impl Object {
     }
 }
 
-type BuiltinFunction = fn(Vec<Object>) -> Object;
+pub type BuiltinFunction = fn(Vec<Object>) -> Object;
 
 impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -61,7 +61,7 @@ impl fmt::Display for Object {
                 write!(f, "{}", fmt_string)
             },
             &Object::Function(_, _, _) => write!(f, "[function]"),
-            &Object::Builtin(ref name, _) => write!(f, "[built-in function: {}]", *name),
+            &Object::Builtin(ref name, _, _) => write!(f, "[built-in function: {}]", *name),
             &Object::Null => write!(f, "null"),
             &Object::ReturnValue(box ref o) => write!(f, "{}", *o),
             &Object::Error(ref s) => write!(f, "Error: {}", s),

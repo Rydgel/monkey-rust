@@ -22,11 +22,13 @@ impl Environment {
         }
     }
 
-    pub fn set(&mut self, name: String, val: Object) -> () {
+    pub fn set(&mut self, name: &String, val: &Object) -> () {
+        let name = (*name).clone();
+        let val = (*val).clone();
         self.store.insert(name, val);
     }
 
-    pub fn get(&self, name: String) -> Option<&Object> {
-        self.store.get(&name)
+    pub fn get(&self, name: &String) -> Option<&Object> {
+        self.store.get(name)
     }
 }

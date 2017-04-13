@@ -164,23 +164,23 @@ named!(parse_ident_expr<Tokens, Expr>,
     )
 );
 
-named!(parse_comma_exprs<Tokens, Box<Expr>>,
+named!(parse_comma_exprs<Tokens, Expr>,
     do_parse!(
         tag_token!(Token::Comma) >>
         e: parse_expr >>
-        (Box::new(e))
+        (e)
     )
 );
 
-named!(parse_exprs<Tokens, Vec<Box<Expr>>>,
+named!(parse_exprs<Tokens, Vec<Expr>>,
     do_parse!(
-        e: map!(parse_expr, Box::new) >>
+        e: parse_expr >>
         es: many0!(parse_comma_exprs) >>
         ([&vec!(e)[..], &es[..]].concat())
     )
 );
 
-fn empty_boxed_vec(i: Tokens) -> IResult<Tokens, Vec<Box<Expr>>> {
+fn empty_boxed_vec(i: Tokens) -> IResult<Tokens, Vec<Expr>> {
     IResult::Done(i, vec!())
 }
 
@@ -193,16 +193,16 @@ named!(parse_array_expr<Tokens, Expr>,
     )
 );
 
-named!(parse_hash_pair<Tokens, (Literal, Box<Expr>)>,
+named!(parse_hash_pair<Tokens, (Literal, Expr)>,
     do_parse!(
         l: parse_literal!() >>
         tag_token!(Token::Colon) >>
         e: parse_expr >>
-        (l, Box::new(e))
+        (l, e)
     )
 );
 
-named!(parse_hash_comma_expr<Tokens, (Literal, Box<Expr>)>,
+named!(parse_hash_comma_expr<Tokens, (Literal, Expr)>,
     do_parse!(
         tag_token!(Token::Comma) >>
         pair: parse_hash_pair >>
@@ -210,7 +210,7 @@ named!(parse_hash_comma_expr<Tokens, (Literal, Box<Expr>)>,
     )
 );
 
-named!(parse_hash_pairs<Tokens, Vec<(Literal, Box<Expr>)>>,
+named!(parse_hash_pairs<Tokens, Vec<(Literal, Expr)>>,
     do_parse!(
         pair: parse_hash_pair >>
         pairs: many0!(parse_hash_comma_expr) >>
@@ -218,7 +218,7 @@ named!(parse_hash_pairs<Tokens, Vec<(Literal, Box<Expr>)>>,
     )
 );
 
-fn empty_pairs(i: Tokens) -> IResult<Tokens, Vec<(Literal, Box<Expr>)>> {
+fn empty_pairs(i: Tokens) -> IResult<Tokens, Vec<(Literal, Expr)>> {
     IResult::Done(i, vec!())
 }
 
@@ -877,8 +877,8 @@ mod tests {
                 Expr::CallExpr {
                     function: Box::new(Expr::IdentExpr(Ident("add".to_owned()))),
                     arguments: vec!(
-                        Box::new(Expr::LitExpr(Literal::IntLiteral(2))),
-                        Box::new(Expr::LitExpr(Literal::IntLiteral(3))),
+                        Expr::LitExpr(Literal::IntLiteral(2)),
+                        Expr::LitExpr(Literal::IntLiteral(3)),
                     ),
                 }
             ),
@@ -886,35 +886,35 @@ mod tests {
                 Expr::CallExpr {
                     function: Box::new(Expr::IdentExpr(Ident("add".to_owned()))),
                     arguments: vec!(
-                        Box::new(Expr::IdentExpr(Ident("a".to_owned()))),
-                        Box::new(Expr::IdentExpr(Ident("b".to_owned()))),
-                        Box::new(Expr::LitExpr(Literal::IntLiteral(1))),
-                        Box::new(Expr::InfixExpr(
+                        Expr::IdentExpr(Ident("a".to_owned())),
+                        Expr::IdentExpr(Ident("b".to_owned())),
+                        Expr::LitExpr(Literal::IntLiteral(1)),
+                        Expr::InfixExpr(
                             Infix::Multiply,
                             Box::new(Expr::LitExpr(Literal::IntLiteral(2))),
                             Box::new(Expr::LitExpr(Literal::IntLiteral(3))),
-                        )),
-                        Box::new(Expr::CallExpr {
+                        ),
+                        Expr::CallExpr {
                             function: Box::new(Expr::IdentExpr(Ident("other".to_owned()))),
                             arguments: vec!(
-                                Box::new(Expr::InfixExpr(
+                                Expr::InfixExpr(
                                     Infix::Plus,
                                     Box::new(Expr::LitExpr(Literal::IntLiteral(4))),
                                     Box::new(Expr::LitExpr(Literal::IntLiteral(5))),
-                                ))
+                                )
                             ),
-                        }),
-                        Box::new(Expr::CallExpr {
+                        },
+                        Expr::CallExpr {
                             function: Box::new(Expr::IdentExpr(Ident("add".to_owned()))),
                             arguments: vec!(
-                                Box::new(Expr::LitExpr(Literal::IntLiteral(6))),
-                                Box::new(Expr::InfixExpr(
+                                Expr::LitExpr(Literal::IntLiteral(6)),
+                                Expr::InfixExpr(
                                     Infix::Multiply,
                                     Box::new(Expr::LitExpr(Literal::IntLiteral(7))),
                                     Box::new(Expr::LitExpr(Literal::IntLiteral(8))),
-                                )),
+                                ),
                             )
-                        }),
+                        },
                     ),
                 }
             ),
@@ -938,8 +938,8 @@ mod tests {
                         }
                     ),
                     arguments: vec!(
-                        Box::new(Expr::LitExpr(Literal::IntLiteral(1))),
-                        Box::new(Expr::LitExpr(Literal::IntLiteral(2))),
+                        Expr::LitExpr(Literal::IntLiteral(1)),
+                        Expr::LitExpr(Literal::IntLiteral(2)),
                     )
                 }
             ),
@@ -1018,20 +1018,16 @@ mod tests {
         let program: Program = vec!(
             Stmt::ExprStmt(
                 Expr::ArrayExpr(vec!(
-                    Box::new(Expr::LitExpr(Literal::IntLiteral(1))),
-                    Box::new(
-                        Expr::InfixExpr(
-                            Infix::Multiply,
-                            Box::new(Expr::LitExpr(Literal::IntLiteral(2))),
-                            Box::new(Expr::LitExpr(Literal::IntLiteral(2)))
-                        )
+                    Expr::LitExpr(Literal::IntLiteral(1)),
+                    Expr::InfixExpr(
+                        Infix::Multiply,
+                        Box::new(Expr::LitExpr(Literal::IntLiteral(2))),
+                        Box::new(Expr::LitExpr(Literal::IntLiteral(2)))
                     ),
-                    Box::new(
-                        Expr::InfixExpr(
-                            Infix::Plus,
-                            Box::new(Expr::LitExpr(Literal::IntLiteral(3))),
-                            Box::new(Expr::LitExpr(Literal::IntLiteral(3)))
-                        )
+                    Expr::InfixExpr(
+                        Infix::Plus,
+                        Box::new(Expr::LitExpr(Literal::IntLiteral(3))),
+                        Box::new(Expr::LitExpr(Literal::IntLiteral(3)))
                     ),
                 ))
             ),
@@ -1108,15 +1104,15 @@ mod tests {
                 Expr::HashExpr(vec!(
                     (
                         Literal::StringLiteral("one".to_owned()),
-                        Box::new(Expr::LitExpr(Literal::IntLiteral(1)))
+                        Expr::LitExpr(Literal::IntLiteral(1))
                     ),
                     (
                         Literal::StringLiteral("two".to_owned()),
-                        Box::new(Expr::LitExpr(Literal::IntLiteral(2)))
+                        Expr::LitExpr(Literal::IntLiteral(2))
                     ),
                     (
                         Literal::StringLiteral("three".to_owned()),
-                        Box::new(Expr::LitExpr(Literal::IntLiteral(3)))
+                        Expr::LitExpr(Literal::IntLiteral(3))
                     ),
                 ))
             ),
@@ -1132,15 +1128,15 @@ mod tests {
                 Expr::HashExpr(vec!(
                     (
                         Literal::IntLiteral(4),
-                        Box::new(Expr::LitExpr(Literal::IntLiteral(1)))
+                        Expr::LitExpr(Literal::IntLiteral(1))
                     ),
                     (
                         Literal::IntLiteral(5),
-                        Box::new(Expr::LitExpr(Literal::IntLiteral(2)))
+                        Expr::LitExpr(Literal::IntLiteral(2))
                     ),
                     (
                         Literal::IntLiteral(6),
-                        Box::new(Expr::LitExpr(Literal::IntLiteral(3)))
+                        Expr::LitExpr(Literal::IntLiteral(3))
                     ),
                 ))
             ),
@@ -1157,11 +1153,11 @@ mod tests {
                 Expr::HashExpr(vec!(
                     (
                         Literal::BoolLiteral(true),
-                        Box::new(Expr::LitExpr(Literal::IntLiteral(1)))
+                        Expr::LitExpr(Literal::IntLiteral(1))
                     ),
                     (
                         Literal::BoolLiteral(false),
-                        Box::new(Expr::LitExpr(Literal::IntLiteral(2)))
+                        Expr::LitExpr(Literal::IntLiteral(2))
                     ),
                 ))
             ),
@@ -1177,27 +1173,27 @@ mod tests {
                 Expr::HashExpr(vec!(
                     (
                         Literal::StringLiteral("one".to_owned()),
-                        Box::new(Expr::InfixExpr(
+                        Expr::InfixExpr(
                             Infix::Plus,
                             Box::new(Expr::LitExpr(Literal::IntLiteral(0))),
                             Box::new(Expr::LitExpr(Literal::IntLiteral(1))),
-                        ))
+                        )
                     ),
                     (
                         Literal::StringLiteral("two".to_owned()),
-                        Box::new(Expr::InfixExpr(
+                        Expr::InfixExpr(
                             Infix::Minus,
                             Box::new(Expr::LitExpr(Literal::IntLiteral(10))),
                             Box::new(Expr::LitExpr(Literal::IntLiteral(8))),
-                        ))
+                        )
                     ),
                     (
                         Literal::StringLiteral("three".to_owned()),
-                        Box::new(Expr::InfixExpr(
+                        Expr::InfixExpr(
                             Infix::Divide,
                             Box::new(Expr::LitExpr(Literal::IntLiteral(15))),
                             Box::new(Expr::LitExpr(Literal::IntLiteral(5))),
-                        ))
+                        )
                     ),
                 ))
             ),

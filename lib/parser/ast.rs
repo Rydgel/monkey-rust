@@ -17,15 +17,15 @@ pub enum Expr {
     InfixExpr(Infix, Box<Expr>, Box<Expr>),
     IfExpr { cond: Box<Expr>, consequence: BlockStmt, alternative: Option<BlockStmt> },
     FnExpr { params: Vec<Ident>, body: BlockStmt },
-    CallExpr { function: Box<Expr>, arguments: Vec<Box<Expr>> },
-    ArrayExpr(Vec<Box<Expr>>),
-    HashExpr(Vec<(Literal, Box<Expr>)>),
+    CallExpr { function: Box<Expr>, arguments: Vec<Expr> },
+    ArrayExpr(Vec<Expr>),
+    HashExpr(Vec<(Literal, Expr)>),
     IndexExpr { array: Box<Expr>, index: Box<Expr> },
 }
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Literal {
-    IntLiteral(usize),
+    IntLiteral(i64),
     BoolLiteral(bool),
     StringLiteral(String),
 }

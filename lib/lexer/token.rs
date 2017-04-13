@@ -9,7 +9,7 @@ pub enum Token {
     // identifier and literals
     Ident(String),
     StringLiteral(String),
-    IntLiteral(usize),
+    IntLiteral(i64),
     BoolLiteral(bool),
     // statements
     Assign,
