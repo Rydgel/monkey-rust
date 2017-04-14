@@ -23,12 +23,19 @@ impl Environment {
     }
 
     pub fn set(&mut self, name: &String, val: &Object) -> () {
-        let name = (*name).clone();
-        let val = (*val).clone();
+        let name = name.clone();
+        let val = val.clone();
         self.store.insert(name, val);
     }
 
     pub fn get(&self, name: &String) -> Option<&Object> {
-        self.store.get(name)
+        let current_scope_object = self.store.get(name);
+        match current_scope_object {
+            Some(_) => current_scope_object,
+            None => match &self.parent {
+                &Some(box ref p) => p.get(name),
+                &None => None,
+            }
+        }
     }
 }

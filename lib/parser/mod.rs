@@ -304,7 +304,7 @@ fn parse_infix_expr(input: Tokens, left: Expr) -> IResult<Tokens, Expr> {
 fn parse_call_expr(input: Tokens, fn_handle: Expr) -> IResult<Tokens, Expr> {
     do_parse!(input,
         tag_token!(Token::LParen) >>
-        args: parse_exprs >>
+        args: alt_complete!(parse_exprs | empty_boxed_vec) >>
         tag_token!(Token::RParen) >>
         (Expr::CallExpr { function: Box::new(fn_handle), arguments: args })
     )

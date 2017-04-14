@@ -232,7 +232,21 @@ impl Evaluator {
                 args_expr.len()
             ))
         } else {
-            Object::Null
+            let args = args_expr
+                .iter()
+                .map(|&ref e| self.eval_expr(e.clone()))
+                .collect::<Vec<_>>();
+            let old_env = self.env.clone();
+            let mut new_env = Environment::new_with_outer(box f_env);
+            let zipped = params.iter().zip(args.iter());
+            for (_, (ident, o)) in zipped.enumerate() {
+                let Ident(name) = ident.clone();
+                new_env.set(&name.clone(), o);
+            }
+            self.env = new_env;
+            let object = self.eval_blockstmt(body);
+            self.env = old_env;
+            object
         }
     }
 
@@ -482,8 +496,46 @@ mod tests {
     }
 
     #[test]
+    fn test_fn() {
+        compare("let identity = fn(x) { x; }; identity(5);".as_bytes(), Object::Integer(5));
+        compare("let identity = fn(x) { return x; }; identity(5);".as_bytes(), Object::Integer(5));
+        compare("let double = fn(x) { x * 2; }; double(5);".as_bytes(), Object::Integer(10));
+        compare("let add = fn(x, y) { x + y; }; add(5, 5);".as_bytes(), Object::Integer(10));
+        compare("let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));".as_bytes(), Object::Integer(20));
+        compare("fn(x) { x; }(5)".as_bytes(), Object::Integer(5));
+        compare("5();".as_bytes(), Object::Error(format!("5 is not a valid function")));
+        compare("false();".as_bytes(), Object::Error(format!("false is not a valid function")));
+        compare("let add = fn(x, y) { x + y; }; add(1);".as_bytes(), Object::Error(format!(
+            "wrong number of arguments: 2 expected but 1 given"
+        )));
+        compare("let a = 10; let x = fn () { a; }; x();".as_bytes(), Object::Integer(10));
+        compare("let x = fn () { a; }; let a = 10; x();".as_bytes(), Object::Integer(10));
+    }
+
+    #[test]
     fn test_array() {
         // todo let double = fn(x) { x * 2 };[1, double(2), 3 * 3, 4 - 3]
+        compare("[1, 2, 3, 4]".as_bytes(), Object::Array(vec!(
+            Object::Integer(1),
+            Object::Integer(2),
+            Object::Integer(3),
+            Object::Integer(4),
+        )));
+
+        compare("[1, 2, 3][0]".as_bytes(), Object::Integer(1));
+        compare("[1, 2, 3][1]".as_bytes(), Object::Integer(2));
+        compare("[1, 2, 3][2]".as_bytes(), Object::Integer(3));
+        compare("let i = 0; [1][i];".as_bytes(), Object::Integer(1));
+        compare("[1, 2, 3][1 + 1];".as_bytes(), Object::Integer(3));
+        compare("let myArray = [1, 2, 3]; myArray[2];".as_bytes(), Object::Integer(3));
+        compare("let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];".as_bytes(), Object::Integer(6));
+        compare("let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i];".as_bytes(), Object::Integer(2));
+        compare("[1, 2, 3][3]".as_bytes(), Object::Null);
+        compare("[1, 2, 3][-1]".as_bytes(), Object::Null);
+    }
+
+    #[test]
+    fn test_hash() {
 
     }
 }
