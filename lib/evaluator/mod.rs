@@ -311,9 +311,14 @@ impl Evaluator {
             },
             Object::Hash(hash) => {
                 let name = self.oth(index);
-                let null_object = Object::Null;
-                let &ref object = hash.get(&name).unwrap_or(&null_object);
-                object.clone()
+                match name {
+                    Object::Error(_) => name,
+                    _ => {
+                        let null_object = Object::Null;
+                        let &ref object = hash.get(&name).unwrap_or(&null_object);
+                        object.clone()
+                    },
+                }
             },
             o => Object::Error(format!("unexpected index target: {}", o)),
         }
@@ -567,7 +572,8 @@ mod tests {
         compare((input_beg.clone() + &"h[true]".to_string()).as_bytes(), Object::Boolean(true));
         compare((input_beg.clone() + &"h[5 < 1]".to_string()).as_bytes(), Object::Boolean(false));
         compare((input_beg.clone() + &"h[100]".to_string()).as_bytes(), Object::Null);
-        compare((input_beg.clone() + &"h[[]]".to_string()).as_bytes(), Object::Null);
+        compare((input_beg.clone() + &"h[[]]".to_string()).as_bytes(),
+            Object::Error(format!("[] is not hashable")));
         compare((input_beg.clone() + &"3[true];".to_string()).as_bytes(),
             Object::Error(format!("unexpected index target: 3")));
     }
