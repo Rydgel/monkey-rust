@@ -463,4 +463,21 @@ mod tests {
             ".as_bytes();
         compare(input, Object::Integer(10));
     }
+
+    #[test]
+    fn test_bindings() {
+        compare("let a = 5; a;".as_bytes(), Object::Integer(5));
+        compare("let a = 5 * 5; a;".as_bytes(), Object::Integer(25));
+        compare("let a = 5; let b = a; b;".as_bytes(), Object::Integer(5));
+        compare("let a = 5; let b = a; let c = a + b + 5; c;".as_bytes(), Object::Integer(15));
+        compare("foobar".as_bytes(), Object::Error(format!("identifier not found: foobar")));
+    }
+
+    #[test]
+    fn test_strings() {
+        compare("\"foobar\"".as_bytes(), Object::String("foobar".to_string()));
+        compare("\"foo\" + \"bar\"".as_bytes(), Object::String("foobar".to_string()));
+        compare("\"foo\" + \" \" + \"bar\"".as_bytes(), Object::String("foo bar".to_string()));
+        compare("\"foo\" - \"bar\"".as_bytes(), Object::Error(format!("foo is not an integer")));
+    }
 }
