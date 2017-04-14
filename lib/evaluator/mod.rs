@@ -480,4 +480,10 @@ mod tests {
         compare("\"foo\" + \" \" + \"bar\"".as_bytes(), Object::String("foo bar".to_string()));
         compare("\"foo\" - \"bar\"".as_bytes(), Object::Error(format!("foo is not an integer")));
     }
+
+    #[test]
+    fn test_array() {
+        // todo let double = fn(x) { x * 2 };[1, double(2), 3 * 3, 4 - 3]
+
+    }
 }
