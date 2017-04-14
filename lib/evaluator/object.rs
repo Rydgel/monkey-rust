@@ -77,7 +77,7 @@ impl Hash for Object {
             &Object::Integer(ref i) => i.hash(state),
             &Object::Boolean(ref b) => b.hash(state),
             &Object::String(ref s) => s.hash(state),
-            _ => panic!("Not supported for hashing error {}", self),
+            _ => "".hash(state),
         }
     }
 }
