@@ -515,7 +515,6 @@ mod tests {
 
     #[test]
     fn test_array() {
-        // todo let double = fn(x) { x * 2 };[1, double(2), 3 * 3, 4 - 3]
         compare("[1, 2, 3, 4]".as_bytes(), Object::Array(vec!(
             Object::Integer(1),
             Object::Integer(2),
