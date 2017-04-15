@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use evaluator::object::*;
+use evaluator::builtins::*;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Environment {
@@ -9,6 +10,9 @@ pub struct Environment {
 
 impl Environment {
     pub fn new() -> Self {
+        let builtins_functions = BuiltinsFunctions::new();
+        let builtins = builtins_functions.get_builtins();
+
         Environment {
             store: HashMap::new(),
             parent: None,

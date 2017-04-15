@@ -1,5 +1,6 @@
 pub mod object;
 pub mod environment;
+pub mod builtins;
 
 use std::collections::HashMap;
 use parser::ast::*;
@@ -261,7 +262,15 @@ impl Evaluator {
                 args_expr.len()
             ))
         } else {
-            Object::Null
+            let args = args_expr
+                .iter()
+                .map(|&ref e| self.eval_expr(e.clone()))
+                .collect::<Vec<_>>();
+            let res = b_fn(args);
+            match res {
+                Ok(o) => o,
+                Err(s) => Object::Error(s),
+            }
         }
     }
 

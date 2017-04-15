@@ -34,7 +34,7 @@ impl Object {
     }
 }
 
-pub type BuiltinFunction = fn(Vec<Object>) -> Object;
+pub type BuiltinFunction = fn(Vec<Object>) -> Result<Object, String>;
 
 impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
