@@ -514,8 +514,11 @@ mod tests {
             "wrong number of arguments: 2 expected but 1 given"
         )));
         compare("let a = 10; let x = fn () { a; }; x();".as_bytes(), Object::Integer(10));
-        // todo
+        // todo fix bug with scope
         // compare("let x = fn () { a; }; let a = 10; x();".as_bytes(), Object::Integer(10));
+
+        // todo more tests
+        
     }
 
     #[test]
