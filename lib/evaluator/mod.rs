@@ -17,12 +17,16 @@ impl Evaluator {
         }
     }
 
-    pub fn eval_program(&mut self, prog: Program) -> Object {
-        let return_data = self.eval_blockstmt(prog);
-        match return_data {
+    fn returned(&mut self, object: Object) -> Object {
+        match object {
             Object::ReturnValue(box v) => v,
             o => o,
         }
+    }
+
+    pub fn eval_program(&mut self, prog: Program) -> Object {
+        let return_data = self.eval_blockstmt(prog);
+        self.returned(return_data)
     }
 
     pub fn eval_blockstmt(&mut self, prog: BlockStmt) -> Object {
@@ -246,7 +250,7 @@ impl Evaluator {
             self.env = new_env;
             let object = self.eval_blockstmt(body);
             self.env = old_env;
-            object
+            self.returned(object)
         }
     }
 
@@ -275,7 +279,7 @@ impl Evaluator {
             (Object::String(s1), Object::String(s2)) => Object::String(s1 + &s2),
             (Object::Error(s), _) => Object::Error(s),
             (_, Object::Error(s)) => Object::Error(s),
-            (x, y) => Object::Error(format!("{} and {} are not addable", x, y)),
+            (x, y) => Object::Error(format!("{:?} and {:?} are not addable", x, y)),
         }
     }
 
@@ -514,11 +518,60 @@ mod tests {
             "wrong number of arguments: 2 expected but 1 given"
         )));
         compare("let a = 10; let x = fn () { a; }; x();".as_bytes(), Object::Integer(10));
-        // todo fix bug with scope
+        // todo fix bug with scope by using refs for environments
         // compare("let x = fn () { a; }; let a = 10; x();".as_bytes(), Object::Integer(10));
 
-        // todo more tests
-        
+        let fn_input1 =
+            "let add = fn(a, b, c, d) { return a + b + c + d; };\
+             add(1, 2, 3, 4);\
+            ".as_bytes();
+
+        let fn_input2 =
+            "let addThree = fn(x) { return x + 3 };\
+             addThree(3);\
+            ".as_bytes();
+
+        let fn_input3 =
+            "let max = fn(x, y) { if (x > y) { x } else { y } };\
+             max(5, 10)\
+            ".as_bytes();
+
+        let fn_input4 =
+            "let factorial = fn(n) {\
+                if (n == 0) {\
+                    1\
+                } else {\
+                    n * factorial(n - 1)\
+                }\
+             }\
+             factorial(5)\
+            ".as_bytes();
+
+        let fn_input5 =
+            "let addThree = fn(x) { return x + 3 };\
+             let callTwoTimes = fn(x, f) { f(f(x)) }\
+             callTwoTimes(3, addThree);\
+            ".as_bytes();
+
+        let fn_input6 =
+            "let callTwoTimes = fn(x, f) { f(f(x)) }\
+             callTwoTimes(3, fn(x) { x + 1 });\
+            ".as_bytes();
+
+        let fn_input7 =
+            "let newAdder = fn(x) { fn(n) { x + n } };\
+             let addTwo = newAdder(2);\
+             addTwo(2);\
+            ".as_bytes();
+
+        compare(fn_input1, Object::Integer(10));
+        compare(fn_input2, Object::Integer(6));
+        compare(fn_input3, Object::Integer(10));
+        // todo fix scoping
+        // compare(fn_input4, Object::Integer(120));
+        compare(fn_input5, Object::Integer(9));
+        compare(fn_input6, Object::Integer(5));
+        compare(fn_input7, Object::Integer(4));
     }
 
     #[test]
