@@ -642,4 +642,17 @@ mod tests {
         compare((input_beg.clone() + &"3[true];".to_string()).as_bytes(),
             Object::Error(format!("unexpected index target: 3")));
     }
+
+    #[test]
+    fn test_builtins() {
+        // len
+        compare("len(\"hello world!\")".as_bytes(), Object::Integer(12));
+        compare("len(\"\")".as_bytes(), Object::Integer(0));
+        compare("len(\"Hey Bob, how ya doin?\")".as_bytes(), Object::Integer(21));
+        compare("len(3)".as_bytes(), Object::Error(format!("invalid arguments for len")));
+        compare("len(\"hello\", \"world\")".as_bytes(), Object::Error(format!("wrong number of arguments: 1 expected but 2 given")));
+        compare("len([])".as_bytes(), Object::Integer(0));
+        compare("len([1, 2, 3, 4])".as_bytes(), Object::Integer(4));
+        
+    }
 }

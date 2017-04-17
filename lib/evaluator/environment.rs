@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use evaluator::object::*;
 use evaluator::builtins::*;
+use parser::ast::*;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Environment {
@@ -10,19 +11,29 @@ pub struct Environment {
 
 impl Environment {
     pub fn new() -> Self {
-        let builtins_functions = BuiltinsFunctions::new();
-        let builtins = builtins_functions.get_builtins();
-
+        let mut hashmap = HashMap::new();
+        Self::fill_env_with_builtins(&mut hashmap);
         Environment {
-            store: HashMap::new(),
+            store: hashmap,
             parent: None,
         }
     }
 
     pub fn new_with_outer(outer: Box<Environment>) -> Self {
+        let mut hashmap = HashMap::new();
+        Self::fill_env_with_builtins(&mut hashmap);
         Environment {
-            store: HashMap::new(),
+            store: hashmap,
             parent: Some(outer),
+        }
+    }
+
+    fn fill_env_with_builtins(hashmap: &mut HashMap<String, Object>) {
+        let builtins_functions = BuiltinsFunctions::new();
+        let builtins = builtins_functions.get_builtins();
+        for (ident, object) in builtins {
+            let Ident(name) = ident.clone();
+            hashmap.insert(name.clone(), object);
         }
     }
 
