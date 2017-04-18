@@ -653,6 +653,23 @@ mod tests {
         compare("len(\"hello\", \"world\")".as_bytes(), Object::Error(format!("wrong number of arguments: 1 expected but 2 given")));
         compare("len([])".as_bytes(), Object::Integer(0));
         compare("len([1, 2, 3, 4])".as_bytes(), Object::Integer(4));
+        // head
+        compare("head([1])".as_bytes(), Object::Integer(1));
+        compare("head([1, 2, 3, 4])".as_bytes(), Object::Integer(1));
+        compare("head([])".as_bytes(), Object::Error(format!("empty array")));
+        // tail
+        compare("tail([1])".as_bytes(), Object::Array(vec!()));
+        compare("tail([1, 2, 3, 4])".as_bytes(),
+            Object::Array(vec!(Object::Integer(2), Object::Integer(3), Object::Integer(4))));
+        compare("tail([])".as_bytes(), Object::Error(format!("empty array")));
+        // cons
+        compare("cons(1, [])".as_bytes(), Object::Array(vec!(Object::Integer(1))));
+        compare("cons(1, [2, 3, 4])".as_bytes(),
+            Object::Array(vec!(
+                Object::Integer(1), Object::Integer(2), Object::Integer(3), Object::Integer(4))
+            )
+        );
+        // map reduce
         
     }
 }
