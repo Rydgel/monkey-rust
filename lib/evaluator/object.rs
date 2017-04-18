@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::fmt;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
@@ -11,7 +13,7 @@ pub enum Object {
     String(String),
     Array(Vec<Object>),
     Hash(HashMap<Object, Object>),
-    Function(Vec<Ident>, BlockStmt, Environment),
+    Function(Vec<Ident>, BlockStmt, Rc<RefCell<Environment>>),
     Builtin(String, usize, BuiltinFunction),
     Null,
     ReturnValue(Box<Object>),

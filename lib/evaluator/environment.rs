@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::collections::HashMap;
 use evaluator::object::*;
 use evaluator::builtins::*;
@@ -6,7 +8,7 @@ use parser::ast::*;
 #[derive(PartialEq, Debug, Clone)]
 pub struct Environment {
     store: HashMap<String, Object>,
-    parent: Option<Box<Environment>>,
+    parent: Option<Rc<RefCell<Environment>>>,
 }
 
 impl Environment {
@@ -19,7 +21,7 @@ impl Environment {
         }
     }
 
-    pub fn new_with_outer(outer: Box<Environment>) -> Self {
+    pub fn new_with_outer(outer: Rc<RefCell<Environment>>) -> Self {
         let mut hashmap = HashMap::new();
         Self::fill_env_with_builtins(&mut hashmap);
         Environment {
@@ -43,12 +45,14 @@ impl Environment {
         self.store.insert(name, val);
     }
 
-    pub fn get(&self, name: &String) -> Option<&Object> {
-        let current_scope_object = self.store.get(name);
-        match current_scope_object {
-            Some(_) => current_scope_object,
+    pub fn get(&self, name: &String) -> Option<Object> {
+        match self.store.get(name) {
+            Some(&ref o) => Some(o.clone()),
             None => match &self.parent {
-                &Some(box ref p) => p.get(name),
+                &Some(ref parent_env) => {
+                    let env = parent_env.borrow();
+                    env.get(name)
+                },
                 &None => None,
             }
         }

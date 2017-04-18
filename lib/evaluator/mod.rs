@@ -2,19 +2,21 @@ pub mod object;
 pub mod environment;
 pub mod builtins;
 
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::collections::HashMap;
 use parser::ast::*;
 use evaluator::object::*;
 use evaluator::environment::*;
 
 pub struct Evaluator {
-    env: Environment
+    env: Rc<RefCell<Environment>>
 }
 
 impl Evaluator {
     pub fn new() -> Self {
         Evaluator {
-            env: Environment::new()
+            env: Rc::new(RefCell::new(Environment::new()))
         }
     }
 
@@ -58,7 +60,7 @@ impl Evaluator {
 
     pub fn register_ident(&mut self, ident: Ident, object: Object) -> Object {
         let Ident(name) = ident;
-        self.env.set(&name, &object);
+        self.env.borrow_mut().set(&name, &object);
         object
     }
 
@@ -81,9 +83,10 @@ impl Evaluator {
 
     pub fn eval_ident(&mut self, ident: Ident) -> Object {
         let Ident(name) = ident;
-        let var = self.env.get(&name);
+        let borrow_env = self.env.borrow();
+        let var = borrow_env.get(&name);
         match var {
-            Some(o) => (*o).clone(),
+            Some(o) => o,
             None => Object::Error(format!("identifier not found: {}", name))
         }
     }
@@ -230,7 +233,7 @@ impl Evaluator {
         }
     }
 
-    fn eval_fn_call(&mut self, args_expr: Vec<Expr>, params: Vec<Ident>, body: BlockStmt, f_env: Environment) -> Object {
+    fn eval_fn_call(&mut self, args_expr: Vec<Expr>, params: Vec<Ident>, body: BlockStmt, f_env: Rc<RefCell<Environment>>) -> Object {
         if args_expr.len() != params.len() {
             Object::Error(format!("wrong number of arguments: {} expected but {} given",
                 params.len(),
@@ -242,13 +245,13 @@ impl Evaluator {
                 .map(|&ref e| self.eval_expr(e.clone()))
                 .collect::<Vec<_>>();
             let old_env = self.env.clone();
-            let mut new_env = Environment::new_with_outer(box f_env);
+            let mut new_env = Environment::new_with_outer(f_env.clone());
             let zipped = params.iter().zip(args.iter());
             for (_, (ident, o)) in zipped.enumerate() {
                 let Ident(name) = ident.clone();
                 new_env.set(&name.clone(), o);
             }
-            self.env = new_env;
+            self.env = Rc::new(RefCell::new(new_env));
             let object = self.eval_blockstmt(body);
             self.env = old_env;
             self.returned(object)
@@ -527,8 +530,7 @@ mod tests {
             "wrong number of arguments: 2 expected but 1 given"
         )));
         compare("let a = 10; let x = fn () { a; }; x();".as_bytes(), Object::Integer(10));
-        // todo fix bug with scope by using refs for environments
-        // compare("let x = fn () { a; }; let a = 10; x();".as_bytes(), Object::Integer(10));
+        compare("let x = fn () { a; }; let a = 10; x();".as_bytes(), Object::Integer(10));
 
         let fn_input1 =
             "let add = fn(a, b, c, d) { return a + b + c + d; };\
@@ -576,8 +578,7 @@ mod tests {
         compare(fn_input1, Object::Integer(10));
         compare(fn_input2, Object::Integer(6));
         compare(fn_input3, Object::Integer(10));
-        // todo fix scoping
-        // compare(fn_input4, Object::Integer(120));
+        compare(fn_input4, Object::Integer(120));
         compare(fn_input5, Object::Integer(9));
         compare(fn_input6, Object::Integer(5));
         compare(fn_input7, Object::Integer(4));
@@ -670,6 +671,6 @@ mod tests {
             )
         );
         // map reduce
-        
+
     }
 }
