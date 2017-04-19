@@ -671,6 +671,36 @@ mod tests {
             )
         );
         // map reduce
+        let map_decl =
+            "let map = fn(f, arr) {\
+              if (len(arr) == 0) {\
+                []\
+              } else {\
+                let h = head(arr);\
+                cons(f(h), map(f, tail(arr)));\
+              }\
+            };\
+            ".to_string();
 
+        let reduce_decl =
+            "let reduce = fn(f, init, arr) {\
+                if (len(arr) == 0) {\
+                    init\
+                } else {\
+                    let newInit = f(init, head(arr));\
+                    reduce(f, newInit, tail(arr));\
+                }\
+            };\
+            ".to_string();
+
+        compare((map_decl + &"let double = fn(x) { x * 2 }; map(double, [1, 2, 3, 4])").as_bytes(),
+            Object::Array(vec!(
+                Object::Integer(2), Object::Integer(4), Object::Integer(6), Object::Integer(8))
+            )
+        );
+
+        compare((reduce_decl + &"let add = fn(x, y) { x + y }; reduce(add, 0, [1, 2, 3, 4, 5])").as_bytes(),
+            Object::Integer(15)
+        );
     }
 }
