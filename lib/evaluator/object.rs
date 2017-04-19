@@ -48,7 +48,7 @@ impl fmt::Display for Object {
                 let mut fmt_string = String::new();
                 fmt_string.push_str("[");
                 for o in v {
-                    fmt_string.push_str(format!("{}", o).as_str());
+                    fmt_string.push_str(format!("{}, ", o).as_str());
                 }
                 fmt_string.push_str("]");
                 write!(f, "{}", fmt_string)
@@ -57,7 +57,7 @@ impl fmt::Display for Object {
                 let mut fmt_string = String::new();
                 fmt_string.push_str("{");
                 for (k, v) in hashmap {
-                    fmt_string.push_str(format!("{} : {},", k, v).as_str());
+                    fmt_string.push_str(format!("{} : {}, ", k, v).as_str());
                 }
                 fmt_string.push_str("}");
                 write!(f, "{}", fmt_string)

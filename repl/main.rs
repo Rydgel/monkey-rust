@@ -8,9 +8,8 @@ use rustyline::{Config, CompletionType, Editor};
 use monkey_lib::lexer::*;
 use monkey_lib::lexer::token::*;
 use monkey_lib::parser::*;
+use monkey_lib::evaluator::*;
 use nom::*;
-
-mod repl;
 
 #[cfg(unix)]
 static PROMPT: &'static str = "\x1b[1;32mmonkey >>\x1b[0m ";
@@ -37,6 +36,8 @@ fn main() {
     println!("Press Ctrl-D or enter \"quit\" to exit.");
     println!("");
 
+    let mut evaluator = Evaluator::new();
+
     loop {
         let readline = rl.readline(PROMPT);
         match readline {
@@ -45,11 +46,16 @@ fn main() {
                 let lex_tokens = Lexer::lex_tokens(line.as_bytes());
                 match lex_tokens {
                     IResult::Done(_, r) => {
-                        println!("Lexer: {:?}", r);
                         let tokens = Tokens::new(&r);
-                        println!("");
                         let parsed = Parser::parse_tokens(tokens);
-                        println!("Parser: {:?}", parsed);
+                        match parsed {
+                            IResult::Done(_, program) => {
+                                let eval = evaluator.eval_program(program);
+                                println!("{}", eval);
+                            },
+                            IResult::Error(_) => println!("Parser error"),
+                            IResult::Incomplete(_) => println!("Incomplete parsing"),
+                        }
                     },
                     IResult::Error(_) => println!("Lexer error"),
                     IResult::Incomplete(_) => println!("Incomplete parsing"),
