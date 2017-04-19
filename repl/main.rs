@@ -52,11 +52,11 @@ fn main() {
                             IResult::Done(_, program) => {
                                 let eval = evaluator.eval_program(program);
                                 println!("{}", eval);
-                            },
+                            }
                             IResult::Error(_) => println!("Parser error"),
                             IResult::Incomplete(_) => println!("Incomplete parsing"),
                         }
-                    },
+                    }
                     IResult::Error(_) => println!("Lexer error"),
                     IResult::Incomplete(_) => println!("Incomplete lexing"),
                 }
