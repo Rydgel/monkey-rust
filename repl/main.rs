@@ -58,7 +58,7 @@ fn main() {
                         }
                     },
                     IResult::Error(_) => println!("Lexer error"),
-                    IResult::Incomplete(_) => println!("Incomplete parsing"),
+                    IResult::Incomplete(_) => println!("Incomplete lexing"),
                 }
             }
             Err(ReadlineError::Interrupted) => {
