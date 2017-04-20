@@ -12,7 +12,7 @@ pub fn read_command() -> Command {
         (about: "The Monkey programming language")
         (@setting ArgRequiredElseHelp)
         (@arg src: -s --src +takes_value "Path of the source file")
-        (@arg run: -r --run +takes_value "Code you want to run inline") 
+        (@arg run: -r --run +takes_value "Code you want to run inline")
     )
         .get_matches();
 
