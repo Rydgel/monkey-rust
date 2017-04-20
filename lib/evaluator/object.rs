@@ -46,18 +46,28 @@ impl fmt::Display for Object {
             &Object::String(ref s) => write!(f, "{}", s),
             &Object::Array(ref v) => {
                 let mut fmt_string = String::new();
+                let mut i = 0;
                 fmt_string.push_str("[");
                 for o in v {
-                    fmt_string.push_str(format!("{}, ", o).as_str());
+                    fmt_string.push_str(format!("{}", o).as_str());
+                    if i < v.len() - 1 {
+                        fmt_string.push_str(format!(", ").as_str());
+                    }
+                    i = i + 1;
                 }
                 fmt_string.push_str("]");
-                write!(f, "{}", fmt_string)
+                write!(f, "{:?}", fmt_string)
             },
             &Object::Hash(ref hashmap) => {
                 let mut fmt_string = String::new();
+                let mut i = 0;
                 fmt_string.push_str("{");
                 for (k, v) in hashmap {
-                    fmt_string.push_str(format!("{} : {}, ", k, v).as_str());
+                    fmt_string.push_str(format!("{} : {}", k, v).as_str());
+                    if i < hashmap.len() - 1 {
+                        fmt_string.push_str(format!(", ").as_str());
+                    }
+                    i = i + 1;
                 }
                 fmt_string.push_str("}");
                 write!(f, "{}", fmt_string)
