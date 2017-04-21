@@ -373,7 +373,6 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use lexer::token::*;
     use lexer::*;
 
     fn assert_input_with_program(input: &[u8], expected_results: Program) {

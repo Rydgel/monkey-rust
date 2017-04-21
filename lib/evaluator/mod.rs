@@ -387,7 +387,6 @@ mod tests {
     use super::*;
     use lexer::token::*;
     use lexer::*;
-    use parser::ast::*;
     use parser::*;
 
     fn compare(input: &[u8], object: Object) {
