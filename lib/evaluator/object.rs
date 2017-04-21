@@ -56,7 +56,7 @@ impl fmt::Display for Object {
                     i = i + 1;
                 }
                 fmt_string.push_str("]");
-                write!(f, "{:?}", fmt_string)
+                write!(f, "{}", fmt_string)
             },
             &Object::Hash(ref hashmap) => {
                 let mut fmt_string = String::new();
