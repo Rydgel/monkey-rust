@@ -1,4 +1,3 @@
-#![feature(closure_to_fn_coercion)]
 #[macro_use]
 
 extern crate nom;
