@@ -22,7 +22,7 @@ impl Evaluator {
 
     fn returned(&mut self, object: Object) -> Object {
         match object {
-            Object::ReturnValue(box v) => v,
+            Object::ReturnValue(v) => *v,
             o => o,
         }
     }
@@ -52,7 +52,7 @@ impl Evaluator {
     pub fn eval_statement(&mut self, stmt: Stmt) -> Object {
         match stmt {
             Stmt::ExprStmt(expr) => self.eval_expr(expr),
-            Stmt::ReturnStmt(expr) => Object::ReturnValue(box self.eval_expr(expr)),
+            Stmt::ReturnStmt(expr) => Object::ReturnValue(Box::new(self.eval_expr(expr))),
             Stmt::LetStmt(ident, expr) => {
                 let object = self.eval_expr(expr);
                 self.register_ident(ident, object)
@@ -70,16 +70,14 @@ impl Evaluator {
         match expr {
             Expr::IdentExpr(i) => self.eval_ident(i),
             Expr::LitExpr(l) => self.eval_literal(l),
-            Expr::PrefixExpr(prefix, box expr) => self.eval_prefix(prefix, expr),
-            Expr::InfixExpr(infix, box expr1, box expr2) => self.eval_infix(infix, expr1, expr2),
-            Expr::IfExpr { cond: box cond, consequence: conse, alternative: maybe_alter } =>
-                self.eval_if(cond, conse, maybe_alter),
+            Expr::PrefixExpr(prefix, expr) => self.eval_prefix(prefix, *expr),
+            Expr::InfixExpr(infix, expr1, expr2) => self.eval_infix(infix, *expr1, *expr2),
+            Expr::IfExpr { cond, consequence, alternative } => self.eval_if(*cond, consequence, alternative),
             Expr::FnExpr { params, body } => self.eval_fn(params, body),
-            Expr::CallExpr { function: box fn_exp, arguments } =>
-                self.eval_call(fn_exp, arguments),
+            Expr::CallExpr { function: fn_exp, arguments } => self.eval_call(*fn_exp, arguments),
             Expr::ArrayExpr(exprs) => self.eval_array(exprs),
             Expr::HashExpr(hash_exprs) => self.eval_hash(hash_exprs),
-            Expr::IndexExpr { box array, box index } => self.eval_index(array, index),
+            Expr::IndexExpr { array, index } => self.eval_index(*array, *index),
         }
     }
 

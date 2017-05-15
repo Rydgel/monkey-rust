@@ -20,6 +20,8 @@ pub enum Object {
     Error(String),
 }
 
+pub type BuiltinFunction = fn(Vec<Object>) -> Result<Object, String>;
+
 impl Object {
     pub fn is_returned(&self) -> bool {
         match self {
@@ -30,13 +32,11 @@ impl Object {
 
     pub fn returned(&self) -> Self {
         match self {
-            &Object::ReturnValue(box ref o) => o.clone(),
+            &Object::ReturnValue(ref o) => *o.clone(),
             &ref o => o.clone(),
         }
     }
 }
-
-pub type BuiltinFunction = fn(Vec<Object>) -> Result<Object, String>;
 
 impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -75,7 +75,7 @@ impl fmt::Display for Object {
             &Object::Function(_, _, _) => write!(f, "[function]"),
             &Object::Builtin(ref name, _, _) => write!(f, "[built-in function: {}]", *name),
             &Object::Null => write!(f, "null"),
-            &Object::ReturnValue(box ref o) => write!(f, "{}", *o),
+            &Object::ReturnValue(ref o) => write!(f, "{}", *o),
             &Object::Error(ref s) => write!(f, "Error: {}", s),
         }
     }
