@@ -61,70 +61,6 @@ impl<'a> Tokens<'a> {
     }
 }
 
-impl<'a> AsChar for &'a Token {
-    #[inline]
-    fn as_char(self) -> char {
-        '\0'
-    }
-
-    #[inline]
-    fn is_alpha(self) -> bool {
-        false
-    }
-
-    #[inline]
-    fn is_alphanum(self) -> bool {
-        false
-    }
-
-    #[inline]
-    fn is_dec_digit(self) -> bool {
-        false
-    }
-
-    #[inline]
-    fn is_hex_digit(self) -> bool {
-        false
-    }
-
-    #[inline]
-    fn is_oct_digit(self) -> bool {
-        false
-    }
-}
-
-impl AsChar for Token {
-    #[inline]
-    fn as_char(self) -> char {
-        '\0'
-    }
-
-    #[inline]
-    fn is_alpha(self) -> bool {
-        false
-    }
-
-    #[inline]
-    fn is_alphanum(self) -> bool {
-        false
-    }
-
-    #[inline]
-    fn is_dec_digit(self) -> bool {
-        false
-    }
-
-    #[inline]
-    fn is_hex_digit(self) -> bool {
-        false
-    }
-
-    #[inline]
-    fn is_oct_digit(self) -> bool {
-        false
-    }
-}
-
 impl<'a> InputLength for Tokens<'a> {
     #[inline]
     fn input_len(&self) -> usize {
@@ -153,7 +89,7 @@ impl<'a> Slice<Range<usize>> for Tokens<'a> {
 impl<'a> Slice<RangeTo<usize>> for Tokens<'a> {
     #[inline]
     fn slice(&self, range: RangeTo<usize>) -> Self {
-      self.slice(0..range.end)
+        self.slice(0..range.end)
     }
 }
 

@@ -3,7 +3,7 @@ name = "monkey-rust"
 version = "0.1.0"
 dependencies = [
  "clap 2.23.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "nom 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "nom 3.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustyline 1.0.0 (git+https://github.com/kkawakam/rustyline)",
 ]
 
@@ -86,7 +86,7 @@ dependencies = [
 
 [[package]]
 name = "nom"
-version = "2.2.0"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -171,7 +171,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7507624b29483431c0ba2d82aece8ca6cdba9382bff4ddd0f7490560c056098d"
 "checksum libc 0.2.21 (registry+https://github.com/rust-lang/crates.io-index)" = "88ee81885f9f04bff991e306fea7c1c60a5f0f9e409e99f6b40e3311a3363135"
 "checksum nix 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "a0d95c5fa8b641c10ad0b8887454ebaafa3c92b5cd5350f8fc693adafd178e7b"
-"checksum nom 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "4fefff3588e844f63a54ec7b91872b8526ec06ffb760559744d032ccea4df002"
+"checksum nom 3.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "5388009f277d5d889ee01f0ba92e3620c759402cdf52a8d40e9ac06969ee3c88"
 "checksum rustc_version 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)" = "c5f5376ea5e30ce23c03eb77cbe4962b988deead10910c372b226388b594c084"
 "checksum rustyline 1.0.0 (git+https://github.com/kkawakam/rustyline)" = "<none>"
 "checksum semver 0.1.20 (registry+https://github.com/rust-lang/crates.io-index)" = "d4f410fedcf71af0345d7607d246e7ad15faaadd49d240ee3b24e5dc21a820ac"
