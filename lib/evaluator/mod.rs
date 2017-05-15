@@ -33,11 +33,13 @@ impl Evaluator {
     }
 
     pub fn eval_blockstmt(&mut self, prog: BlockStmt) -> Object {
-        match prog[..] {
-            [] => Object::Null,
-            [ref s] => self.eval_statement(s.clone()),
-            [ref s, ref ss..] => {
-                let object = self.eval_statement(s.clone());
+        match prog.len() {
+            0 => Object::Null,
+            1 => self.eval_statement(prog[0].clone()),
+            _ => {
+                let s = prog[0].clone();
+                let ss = &prog[1..];
+                let object = self.eval_statement(s);
                 if object.is_returned() {
                     object
                 } else {

@@ -21,12 +21,12 @@ impl BuiltinsFunctions {
     fn bprint(&self) -> Object {
         Object::Builtin(
             String::from("print"), 1, |args: Vec<Object>| {
-                match args[..] {
-                    [Object::String(ref t)] => {
+                match args.iter().next() {
+                    Some(&Object::String(ref t)) => {
                         println!("{}", t);
                         Ok(Object::Null)
                     },
-                    [ref o] => {
+                    Some(ref o) => {
                         println!("{}", o);
                         Ok(Object::Null)
                     },
@@ -39,9 +39,9 @@ impl BuiltinsFunctions {
     fn blen(&self) -> Object {
         Object::Builtin(
             String::from("len"), 1, |args: Vec<Object>| {
-                match args[..] {
-                    [Object::String(ref s)] => Ok(Object::Integer(s.len() as i64)),
-                    [Object::Array(ref arr)] => Ok(Object::Integer(arr.len() as i64)),
+                match args.iter().next() {
+                    Some(&Object::String(ref s)) => Ok(Object::Integer(s.len() as i64)),
+                    Some(&Object::Array(ref arr)) => Ok(Object::Integer(arr.len() as i64)),
                     _ => Err(String::from("invalid arguments for len")),
                 }
             }
@@ -51,11 +51,11 @@ impl BuiltinsFunctions {
     fn bhead(&self) -> Object {
         Object::Builtin(
             String::from("head"), 1, |args: Vec<Object>| {
-                match args[..] {
-                    [Object::Array(ref arr)] => {
-                        match arr[..] {
-                            [] => Err(String::from("empty array")),
-                            [ref x, ref _tail..] => Ok(x.clone()),
+                match args.iter().next() {
+                    Some(&Object::Array(ref arr)) => {
+                        match arr.first() {
+                            None => Err(String::from("empty array")),
+                            Some(x) => Ok(x.clone()),
                         }
                     },
                     _ => Err(String::from("invalid arguments for head")),
@@ -67,11 +67,14 @@ impl BuiltinsFunctions {
     fn btail(&self) -> Object {
         Object::Builtin(
             String::from("tail"), 1, |args: Vec<Object>| {
-                match args[..] {
-                    [Object::Array(ref arr)] => {
-                        match arr[..] {
-                            [] => Err(String::from("empty array")),
-                            [ref _x, ref tail..] => Ok(Object::Array(tail.to_vec())),
+                match args.iter().next() {
+                    Some(&Object::Array(ref arr)) => {
+                        match arr.len() {
+                            0 => Err(String::from("empty array")),
+                            _ => {
+                                let tail = &arr[1..];
+                                Ok(Object::Array(tail.to_vec()))
+                            },
                         }
                     },
                     _ => Err(String::from("invalid arguments for tail")),
@@ -83,8 +86,9 @@ impl BuiltinsFunctions {
     fn bcons(&self) -> Object {
         Object::Builtin(
             String::from("cons"), 2, |args: Vec<Object>| {
-                match args[..] {
-                    [ref o, Object::Array(ref os)] => {
+                let mut args = args.iter();
+                match (args.next(), args.next()) {
+                    (Some(&ref o), Some(&Object::Array(ref os))) => {
                         let mut vectors = vec!();
                         vectors.push(o.clone());
                         for object in os { vectors.push(object.clone()); }

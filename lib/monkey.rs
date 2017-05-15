@@ -1,5 +1,4 @@
 #![feature(box_syntax, box_patterns)]
-#![feature(slice_patterns, advanced_slice_patterns)]
 #![feature(closure_to_fn_coercion)]
 #[macro_use]
 
