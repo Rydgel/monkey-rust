@@ -11,6 +11,12 @@ pub struct Environment {
     parent: Option<Rc<RefCell<Environment>>>,
 }
 
+impl Default for Environment {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Environment {
     pub fn new() -> Self {
         let mut hashmap = HashMap::new();
@@ -39,21 +45,20 @@ impl Environment {
         }
     }
 
-    pub fn set(&mut self, name: &String, val: &Object) -> () {
-        let name = name.clone();
+    pub fn set(&mut self, name: &str, val: &Object) -> () {
         let val = val.clone();
-        self.store.insert(name, val);
+        self.store.insert(name.to_string(), val);
     }
 
-    pub fn get(&self, name: &String) -> Option<Object> {
+    pub fn get(&self, name: &str) -> Option<Object> {
         match self.store.get(name) {
             Some(&ref o) => Some(o.clone()),
-            None => match &self.parent {
-                &Some(ref parent_env) => {
+            None => match self.parent {
+                Some(ref parent_env) => {
                     let env = parent_env.borrow();
                     env.get(name)
                 },
-                &None => None,
+                None => None,
             }
         }
     }

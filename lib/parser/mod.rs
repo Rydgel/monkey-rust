@@ -10,7 +10,7 @@ macro_rules! tag_token (
   ($i: expr, $tag: expr) => (
     {
         let (i1, t1) = try_parse!($i, take!(1));
-        if t1.tok.len() == 0 {
+        if t1.tok.is_empty() {
             IResult::Incomplete::<_,_,u32>(Needed::Size(1))
         } else {
             if t1.tok[0] == $tag {
@@ -27,7 +27,7 @@ macro_rules! parse_ident (
   ($i: expr,) => (
     {
         let (i1, t1) = try_parse!($i, take!(1));
-        if t1.tok.len() == 0 {
+        if t1.tok.is_empty() {
             IResult::Error(error_position!(ErrorKind::Tag, $i))
         } else {
             match t1.tok[0].clone() {
@@ -43,7 +43,7 @@ macro_rules! parse_literal (
   ($i: expr,) => (
     {
         let (i1, t1) = try_parse!($i, take!(1));
-        if t1.tok.len() == 0 {
+        if t1.tok.is_empty() {
             IResult::Error(error_position!(ErrorKind::Tag, $i))
         } else {
             match t1.tok[0].clone() {
@@ -57,8 +57,8 @@ macro_rules! parse_literal (
   );
 );
 
-fn infix_op(t: Token) -> (Precedence, Option<Infix>) {
-    match t {
+fn infix_op(t: &Token) -> (Precedence, Option<Infix>) {
+    match *t {
         Token::Equal => (Precedence::PEquals, Some(Infix::Equal)),
         Token::NotEqual => (Precedence::PEquals, Some(Infix::NotEqual)),
         Token::LessThanEqual => (Precedence::PLessGreater, Some(Infix::LessThanEqual)),
@@ -238,7 +238,7 @@ fn parse_prefix_expr(input: Tokens) -> IResult<Tokens, Expr> {
         tag_token!(Token::Not)
     ));
 
-    if t1.tok.len() == 0 {
+    if t1.tok.is_empty() {
         IResult::Error(error_position!(ErrorKind::Tag, input))
     } else {
         let (i2, e) = try_parse!(i1, parse_atom_expr);
@@ -262,11 +262,11 @@ fn parse_pratt_expr(input: Tokens, precedence: Precedence) -> IResult<Tokens, Ex
 
 fn go_parse_pratt_expr(input: Tokens, precedence: Precedence, left: Expr) -> IResult<Tokens, Expr> {
     let (i1, t1) = try_parse!(input, take!(1));
-    if t1.tok.len() == 0 {
+    if t1.tok.is_empty() {
         IResult::Done(i1, left)
     } else {
         let preview = t1.tok[0].clone();
-        match infix_op(preview) {
+        match infix_op(&preview) {
             (Precedence::PCall, _) if precedence < Precedence::PCall => {
                 let (i2, left2) = try_parse!(input, apply!(parse_call_expr, left));
                 go_parse_pratt_expr(i2, precedence, left2)
@@ -286,11 +286,11 @@ fn go_parse_pratt_expr(input: Tokens, precedence: Precedence, left: Expr) -> IRe
 
 fn parse_infix_expr(input: Tokens, left: Expr) -> IResult<Tokens, Expr> {
     let (i1, t1) = try_parse!(input, take!(1));
-    if t1.tok.len() == 0 {
+    if t1.tok.is_empty() {
         IResult::Error(error_position!(ErrorKind::Tag, input))
     } else {
         let next = t1.tok[0].clone();
-        let (precedence, maybe_op) = infix_op(next);
+        let (precedence, maybe_op) = infix_op(&next);
         match maybe_op {
             None => IResult::Error(error_position!(ErrorKind::Tag, input)),
             Some(op) => {

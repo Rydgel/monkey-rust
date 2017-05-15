@@ -13,6 +13,12 @@ pub struct Evaluator {
     env: Rc<RefCell<Environment>>
 }
 
+impl Default for Evaluator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Evaluator {
     pub fn new() -> Self {
         Evaluator {
@@ -133,8 +139,7 @@ impl Evaluator {
                 let i2 = self.oti(object2);
                 match (i1, i2) {
                     (Ok(i1), Ok(i2)) => Object::Integer(i1 - i2),
-                    (Err(err), _) => err,
-                    (_, Err(err)) => err,
+                    (Err(err), _) | (_, Err(err)) => err,
                 }
             },
             Infix::Divide => {
@@ -142,8 +147,7 @@ impl Evaluator {
                 let i2 = self.oti(object2);
                 match (i1, i2) {
                     (Ok(i1), Ok(i2)) => Object::Integer(i1 / i2),
-                    (Err(err), _) => err,
-                    (_, Err(err)) => err,
+                    (Err(err), _) | (_, Err(err)) => err,
                 }
             },
             Infix::Multiply => {
@@ -151,8 +155,7 @@ impl Evaluator {
                 let i2 = self.oti(object2);
                 match (i1, i2) {
                     (Ok(i1), Ok(i2)) => Object::Integer(i1 * i2),
-                    (Err(err), _) => err,
-                    (_, Err(err)) => err,
+                    (Err(err), _) | (_, Err(err)) => err,
                 }
             },
             Infix::Equal => {
@@ -166,8 +169,7 @@ impl Evaluator {
                 let i2 = self.oti(object2);
                 match (i1, i2) {
                     (Ok(i1), Ok(i2)) => Object::Boolean(i1 >= i2),
-                    (Err(err), _) => err,
-                    (_, Err(err)) => err,
+                    (Err(err), _) | (_, Err(err)) => err,
                 }
             },
             Infix::GreaterThan => {
@@ -175,8 +177,7 @@ impl Evaluator {
                 let i2 = self.oti(object2);
                 match (i1, i2) {
                     (Ok(i1), Ok(i2)) => Object::Boolean(i1 > i2),
-                    (Err(err), _) => err,
-                    (_, Err(err)) => err,
+                    (Err(err), _) | (_, Err(err)) => err,
                 }
             },
             Infix::LessThanEqual => {
@@ -184,8 +185,7 @@ impl Evaluator {
                 let i2 = self.oti(object2);
                 match (i1, i2) {
                     (Ok(i1), Ok(i2)) => Object::Boolean(i1 <= i2),
-                    (Err(err), _) => err,
-                    (_, Err(err)) => err,
+                    (Err(err), _) | (_, Err(err)) => err,
                 }
             },
             Infix::LessThan => {
@@ -193,8 +193,7 @@ impl Evaluator {
                 let i2 = self.oti(object2);
                 match (i1, i2) {
                     (Ok(i1), Ok(i2)) => Object::Boolean(i1 < i2),
-                    (Err(err), _) => err,
-                    (_, Err(err)) => err,
+                    (Err(err), _) | (_, Err(err)) => err,
                 }
             },
         }
@@ -289,15 +288,14 @@ impl Evaluator {
         match (object1, object2) {
             (Object::Integer(i1), Object::Integer(i2)) => Object::Integer(i1 + i2),
             (Object::String(s1), Object::String(s2)) => Object::String(s1 + &s2),
-            (Object::Error(s), _) => Object::Error(s),
-            (_, Object::Error(s)) => Object::Error(s),
+            (Object::Error(s), _) | (_, Object::Error(s)) => Object::Error(s),
             (x, y) => Object::Error(format!("{:?} and {:?} are not addable", x, y)),
         }
     }
 
     pub fn eval_hash(&mut self, hs: Vec<(Literal, Expr)>) -> Object {
         let mut hashmap = HashMap::new();
-        for pair in hs.iter() {
+        for pair in &hs {
             let (k, v) = self.eval_pair(pair.clone());
             hashmap.insert(k, v);
         }
@@ -358,8 +356,7 @@ impl Evaluator {
 
     pub fn otf(&mut self, object: Object) -> Object {
         match object {
-            Object::Function(_, _, _) => object,
-            Object::Builtin(_, _, _) => object,
+            Object::Function(_, _, _) | Object::Builtin(_, _, _) => object,
             Object::Error(s) => Object::Error(s),
             f => Object::Error(format!("{} is not a valid function", f)),
         }

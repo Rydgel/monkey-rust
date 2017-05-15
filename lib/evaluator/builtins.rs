@@ -3,6 +3,12 @@ use evaluator::object::*;
 
 pub struct BuiltinsFunctions;
 
+impl Default for BuiltinsFunctions {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl BuiltinsFunctions {
     pub fn new() -> Self {
         BuiltinsFunctions {}
@@ -30,7 +36,7 @@ fn bprint_fn(args: Vec<Object>) -> Result<Object, String> {
             println!("{}", t);
             Ok(Object::Null)
         },
-        Some(ref o) => {
+        Some(o) => {
             println!("{}", o);
             Ok(Object::Null)
         },
