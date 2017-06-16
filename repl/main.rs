@@ -31,10 +31,10 @@ fn main() {
         println!("No previous history.");
     }
 
-    println!("");
+    println!();
     println!("This is the monkey language repl v0.2.0");
     println!("Press Ctrl-D or enter \"quit\" to exit.");
-    println!("");
+    println!();
 
     let mut evaluator = Evaluator::new();
 
