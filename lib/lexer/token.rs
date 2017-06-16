@@ -43,10 +43,10 @@ pub enum Token {
     RBracket,
 }
 
-#[derive(Clone,Copy,PartialEq,Debug)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 #[repr(C)]
 pub struct Tokens<'a> {
-    pub tok: &'a[Token],
+    pub tok: &'a [Token],
     pub start: usize,
     pub end: usize,
 }
@@ -112,9 +112,9 @@ impl<'a> Slice<RangeFull> for Tokens<'a> {
 }
 
 impl<'a> InputIter for Tokens<'a> {
-    type Item     = &'a Token;
-    type RawItem  = Token;
-    type Iter     = Enumerate<::std::slice::Iter<'a, Token>>;
+    type Item = &'a Token;
+    type RawItem = Token;
+    type Iter = Enumerate<::std::slice::Iter<'a, Token>>;
     type IterElem = ::std::slice::Iter<'a, Token>;
 
     #[inline]
@@ -126,11 +126,14 @@ impl<'a> InputIter for Tokens<'a> {
         self.tok.iter()
     }
     #[inline]
-    fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool {
+    fn position<P>(&self, predicate: P) -> Option<usize>
+    where
+        P: Fn(Self::RawItem) -> bool,
+    {
         self.tok.iter().position(|b| predicate(b.clone()))
     }
     #[inline]
-    fn slice_index(&self, count:usize) -> Option<usize> {
+    fn slice_index(&self, count: usize) -> Option<usize> {
         if self.tok.len() >= count {
             Some(count)
         } else {

@@ -10,7 +10,7 @@ use evaluator::object::*;
 use evaluator::environment::*;
 
 pub struct Evaluator {
-    env: Rc<RefCell<Environment>>
+    env: Rc<RefCell<Environment>>,
 }
 
 impl Default for Evaluator {
@@ -21,9 +21,7 @@ impl Default for Evaluator {
 
 impl Evaluator {
     pub fn new() -> Self {
-        Evaluator {
-            env: Rc::new(RefCell::new(Environment::new()))
-        }
+        Evaluator { env: Rc::new(RefCell::new(Environment::new())) }
     }
 
     fn returned(&mut self, object: Object) -> Object {
@@ -51,7 +49,7 @@ impl Evaluator {
                 } else {
                     self.eval_blockstmt(ss.to_vec())
                 }
-            },
+            }
         }
     }
 
@@ -62,7 +60,7 @@ impl Evaluator {
             Stmt::LetStmt(ident, expr) => {
                 let object = self.eval_expr(expr);
                 self.register_ident(ident, object)
-            },
+            }
         }
     }
 
@@ -78,9 +76,16 @@ impl Evaluator {
             Expr::LitExpr(l) => self.eval_literal(l),
             Expr::PrefixExpr(prefix, expr) => self.eval_prefix(prefix, *expr),
             Expr::InfixExpr(infix, expr1, expr2) => self.eval_infix(infix, *expr1, *expr2),
-            Expr::IfExpr { cond, consequence, alternative } => self.eval_if(*cond, consequence, alternative),
+            Expr::IfExpr {
+                cond,
+                consequence,
+                alternative,
+            } => self.eval_if(*cond, consequence, alternative),
             Expr::FnExpr { params, body } => self.eval_fn(params, body),
-            Expr::CallExpr { function: fn_exp, arguments } => self.eval_call(*fn_exp, arguments),
+            Expr::CallExpr {
+                function: fn_exp,
+                arguments,
+            } => self.eval_call(*fn_exp, arguments),
             Expr::ArrayExpr(exprs) => self.eval_array(exprs),
             Expr::HashExpr(hash_exprs) => self.eval_hash(hash_exprs),
             Expr::IndexExpr { array, index } => self.eval_index(*array, *index),
@@ -93,7 +98,7 @@ impl Evaluator {
         let var = borrow_env.get(&name);
         match var {
             Some(o) => o,
-            None => Object::Error(format!("identifier not found: {}", name))
+            None => Object::Error(format!("identifier not found: {}", name)),
         }
     }
 
@@ -113,19 +118,19 @@ impl Evaluator {
                     Ok(b) => Object::Boolean(!b),
                     Err(err) => err,
                 }
-            },
+            }
             Prefix::PrefixPlus => {
                 match self.oti(object) {
                     Ok(i) => Object::Integer(i),
                     Err(err) => err,
                 }
-            },
+            }
             Prefix::PrefixMinus => {
                 match self.oti(object) {
                     Ok(i) => Object::Integer(-i),
                     Err(err) => err,
                 }
-            },
+            }
         }
     }
 
@@ -141,7 +146,7 @@ impl Evaluator {
                     (Ok(i1), Ok(i2)) => Object::Integer(i1 - i2),
                     (Err(err), _) | (_, Err(err)) => err,
                 }
-            },
+            }
             Infix::Divide => {
                 let i1 = self.oti(object1);
                 let i2 = self.oti(object2);
@@ -149,7 +154,7 @@ impl Evaluator {
                     (Ok(i1), Ok(i2)) => Object::Integer(i1 / i2),
                     (Err(err), _) | (_, Err(err)) => err,
                 }
-            },
+            }
             Infix::Multiply => {
                 let i1 = self.oti(object1);
                 let i2 = self.oti(object2);
@@ -157,13 +162,9 @@ impl Evaluator {
                     (Ok(i1), Ok(i2)) => Object::Integer(i1 * i2),
                     (Err(err), _) | (_, Err(err)) => err,
                 }
-            },
-            Infix::Equal => {
-                Object::Boolean(object1 == object2)
-            },
-            Infix::NotEqual => {
-                Object::Boolean(object1 != object2)
-            },
+            }
+            Infix::Equal => Object::Boolean(object1 == object2),
+            Infix::NotEqual => Object::Boolean(object1 != object2),
             Infix::GreaterThanEqual => {
                 let i1 = self.oti(object1);
                 let i2 = self.oti(object2);
@@ -171,7 +172,7 @@ impl Evaluator {
                     (Ok(i1), Ok(i2)) => Object::Boolean(i1 >= i2),
                     (Err(err), _) | (_, Err(err)) => err,
                 }
-            },
+            }
             Infix::GreaterThan => {
                 let i1 = self.oti(object1);
                 let i2 = self.oti(object2);
@@ -179,7 +180,7 @@ impl Evaluator {
                     (Ok(i1), Ok(i2)) => Object::Boolean(i1 > i2),
                     (Err(err), _) | (_, Err(err)) => err,
                 }
-            },
+            }
             Infix::LessThanEqual => {
                 let i1 = self.oti(object1);
                 let i2 = self.oti(object2);
@@ -187,7 +188,7 @@ impl Evaluator {
                     (Ok(i1), Ok(i2)) => Object::Boolean(i1 <= i2),
                     (Err(err), _) | (_, Err(err)) => err,
                 }
-            },
+            }
             Infix::LessThan => {
                 let i1 = self.oti(object1);
                 let i2 = self.oti(object2);
@@ -195,11 +196,16 @@ impl Evaluator {
                     (Ok(i1), Ok(i2)) => Object::Boolean(i1 < i2),
                     (Err(err), _) | (_, Err(err)) => err,
                 }
-            },
+            }
         }
     }
 
-    pub fn eval_if(&mut self, cond: Expr, conse: BlockStmt, maybe_alter: Option<BlockStmt>) -> Object {
+    pub fn eval_if(
+        &mut self,
+        cond: Expr,
+        conse: BlockStmt,
+        maybe_alter: Option<BlockStmt>,
+    ) -> Object {
         let object = self.eval_expr(cond);
         match self.otb(object) {
             Ok(b) => {
@@ -211,7 +217,7 @@ impl Evaluator {
                         _ => Object::Null,
                     }
                 }
-            },
+            }
             Err(err) => err,
         }
     }
@@ -224,17 +230,26 @@ impl Evaluator {
         let fn_object = self.eval_expr(fn_expr);
         let fn_ = self.otf(fn_object);
         match fn_ {
-            Object::Function(params, body, f_env) =>
-                self.eval_fn_call(args_expr, params, body, f_env),
-            Object::Builtin(_, num_params, b_fn) =>
-                self.eval_builtin_call(args_expr, num_params, b_fn),
+            Object::Function(params, body, f_env) => {
+                self.eval_fn_call(args_expr, params, body, f_env)
+            }
+            Object::Builtin(_, num_params, b_fn) => {
+                self.eval_builtin_call(args_expr, num_params, b_fn)
+            }
             o_err => o_err,
         }
     }
 
-    fn eval_fn_call(&mut self, args_expr: Vec<Expr>, params: Vec<Ident>, body: BlockStmt, f_env: Rc<RefCell<Environment>>) -> Object {
+    fn eval_fn_call(
+        &mut self,
+        args_expr: Vec<Expr>,
+        params: Vec<Ident>,
+        body: BlockStmt,
+        f_env: Rc<RefCell<Environment>>,
+    ) -> Object {
         if args_expr.len() != params.len() {
-            Object::Error(format!("wrong number of arguments: {} expected but {} given",
+            Object::Error(format!(
+                "wrong number of arguments: {} expected but {} given",
                 params.len(),
                 args_expr.len()
             ))
@@ -257,9 +272,15 @@ impl Evaluator {
         }
     }
 
-    fn eval_builtin_call(&mut self, args_expr: Vec<Expr>, num_params: usize, b_fn: BuiltinFunction) -> Object {
+    fn eval_builtin_call(
+        &mut self,
+        args_expr: Vec<Expr>,
+        num_params: usize,
+        b_fn: BuiltinFunction,
+    ) -> Object {
         if args_expr.len() != num_params {
-            Object::Error(format!("wrong number of arguments: {} expected but {} given",
+            Object::Error(format!(
+                "wrong number of arguments: {} expected but {} given",
                 num_params,
                 args_expr.len()
             ))
@@ -288,7 +309,8 @@ impl Evaluator {
         match (object1, object2) {
             (Object::Integer(i1), Object::Integer(i2)) => Object::Integer(i1 + i2),
             (Object::String(s1), Object::String(s2)) => Object::String(s1 + &s2),
-            (Object::Error(s), _) | (_, Object::Error(s)) => Object::Error(s),
+            (Object::Error(s), _) |
+            (_, Object::Error(s)) => Object::Error(s),
             (x, y) => Object::Error(format!("{:?} and {:?} are not addable", x, y)),
         }
     }
@@ -319,10 +341,10 @@ impl Evaluator {
                         let null_object = Object::Null;
                         let &ref object = arr.get(index_number as usize).unwrap_or(&null_object);
                         object.clone()
-                    },
+                    }
                     Err(err) => err,
                 }
-            },
+            }
             Object::Hash(hash) => {
                 let name = self.oth(index);
                 match name {
@@ -331,9 +353,9 @@ impl Evaluator {
                         let null_object = Object::Null;
                         let &ref object = hash.get(&name).unwrap_or(&null_object);
                         object.clone()
-                    },
+                    }
                 }
-            },
+            }
             o => Object::Error(format!("unexpected index target: {}", o)),
         }
     }
@@ -356,7 +378,8 @@ impl Evaluator {
 
     pub fn otf(&mut self, object: Object) -> Object {
         match object {
-            Object::Function(_, _, _) | Object::Builtin(_, _, _) => object,
+            Object::Function(_, _, _) |
+            Object::Builtin(_, _, _) => object,
             Object::Error(s) => Object::Error(s),
             f => Object::Error(format!("{} is not a valid function", f)),
         }
@@ -422,14 +445,26 @@ mod tests {
         compare("+1".as_bytes(), Object::Integer(1));
         compare("+5".as_bytes(), Object::Integer(5));
         compare("+20".as_bytes(), Object::Integer(20));
-        compare("+true".as_bytes(), Object::Error(format!("true is not an integer")));
-        compare("+false".as_bytes(), Object::Error(format!("false is not an integer")));
+        compare(
+            "+true".as_bytes(),
+            Object::Error(format!("true is not an integer")),
+        );
+        compare(
+            "+false".as_bytes(),
+            Object::Error(format!("false is not an integer")),
+        );
         // the prefix -
         compare("-1".as_bytes(), Object::Integer(-1));
         compare("-5".as_bytes(), Object::Integer(-5));
         compare("-20".as_bytes(), Object::Integer(-20));
-        compare("-true".as_bytes(), Object::Error(format!("true is not an integer")));
-        compare("-false".as_bytes(), Object::Error(format!("false is not an integer")));
+        compare(
+            "-true".as_bytes(),
+            Object::Error(format!("true is not an integer")),
+        );
+        compare(
+            "-false".as_bytes(),
+            Object::Error(format!("false is not an integer")),
+        );
     }
 
     #[test]
@@ -445,7 +480,10 @@ mod tests {
         compare("2 * (5 + 10)".as_bytes(), Object::Integer(30));
         compare("3 * 3 * 3 + 10".as_bytes(), Object::Integer(37));
         compare("3 * (3 * 3) + 10".as_bytes(), Object::Integer(37));
-        compare("(5 + 10 * 2 + 15 / 3) * 2 + -10".as_bytes(), Object::Integer(50));
+        compare(
+            "(5 + 10 * 2 + 15 / 3) * 2 + -10".as_bytes(),
+            Object::Integer(50),
+        );
         // logic algebra
         compare("1 < 2".as_bytes(), Object::Boolean(true));
         compare("1 > 2".as_bytes(), Object::Boolean(false));
@@ -470,11 +508,20 @@ mod tests {
     fn test_conditional() {
         compare("if (true) { 10 }".as_bytes(), Object::Integer(10));
         compare("if (false) { 10 }".as_bytes(), Object::Null);
-        compare("if (1) { 10 }".as_bytes(), Object::Error(format!("1 is not a bool")));
+        compare(
+            "if (1) { 10 }".as_bytes(),
+            Object::Error(format!("1 is not a bool")),
+        );
         compare("if (1 < 2) { 10 }".as_bytes(), Object::Integer(10));
         compare("if (1 > 2) { 10 }".as_bytes(), Object::Null);
-        compare("if (1 < 2) { 10 } else { 20 }".as_bytes(), Object::Integer(10));
-        compare("if (1 > 2) { 10 } else { 20 }".as_bytes(), Object::Integer(20));
+        compare(
+            "if (1 < 2) { 10 } else { 20 }".as_bytes(),
+            Object::Integer(10),
+        );
+        compare(
+            "if (1 > 2) { 10 } else { 20 }".as_bytes(),
+            Object::Integer(20),
+        );
     }
 
     #[test]
@@ -484,14 +531,14 @@ mod tests {
         compare("return 2 * 5; 9".as_bytes(), Object::Integer(10));
         compare("9; return 2 * 5; 9".as_bytes(), Object::Integer(10));
 
-        let input =
-            "if (10 > 1) {\
+        let input = "if (10 > 1) {\
                  if (10 > 1) {\
                      return 10;\
                  }\
                  return 1;\
              }\
-            ".as_bytes();
+            "
+            .as_bytes();
         compare(input, Object::Integer(10));
     }
 
@@ -500,51 +547,96 @@ mod tests {
         compare("let a = 5; a;".as_bytes(), Object::Integer(5));
         compare("let a = 5 * 5; a;".as_bytes(), Object::Integer(25));
         compare("let a = 5; let b = a; b;".as_bytes(), Object::Integer(5));
-        compare("let a = 5; let b = a; let c = a + b + 5; c;".as_bytes(), Object::Integer(15));
-        compare("foobar".as_bytes(), Object::Error(format!("identifier not found: foobar")));
+        compare(
+            "let a = 5; let b = a; let c = a + b + 5; c;".as_bytes(),
+            Object::Integer(15),
+        );
+        compare(
+            "foobar".as_bytes(),
+            Object::Error(format!("identifier not found: foobar")),
+        );
     }
 
     #[test]
     fn test_strings() {
-        compare("\"foobar\"".as_bytes(), Object::String("foobar".to_string()));
-        compare("\"foo\" + \"bar\"".as_bytes(), Object::String("foobar".to_string()));
-        compare("\"foo\" + \" \" + \"bar\"".as_bytes(), Object::String("foo bar".to_string()));
-        compare("\"foo\" - \"bar\"".as_bytes(), Object::Error(format!("foo is not an integer")));
+        compare(
+            "\"foobar\"".as_bytes(),
+            Object::String("foobar".to_string()),
+        );
+        compare(
+            "\"foo\" + \"bar\"".as_bytes(),
+            Object::String("foobar".to_string()),
+        );
+        compare(
+            "\"foo\" + \" \" + \"bar\"".as_bytes(),
+            Object::String("foo bar".to_string()),
+        );
+        compare(
+            "\"foo\" - \"bar\"".as_bytes(),
+            Object::Error(format!("foo is not an integer")),
+        );
     }
 
     #[test]
     fn test_fn() {
-        compare("let identity = fn(x) { x; }; identity(5);".as_bytes(), Object::Integer(5));
-        compare("let identity = fn(x) { return x; }; identity(5);".as_bytes(), Object::Integer(5));
-        compare("let double = fn(x) { x * 2; }; double(5);".as_bytes(), Object::Integer(10));
-        compare("let add = fn(x, y) { x + y; }; add(5, 5);".as_bytes(), Object::Integer(10));
-        compare("let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));".as_bytes(), Object::Integer(20));
+        compare(
+            "let identity = fn(x) { x; }; identity(5);".as_bytes(),
+            Object::Integer(5),
+        );
+        compare(
+            "let identity = fn(x) { return x; }; identity(5);".as_bytes(),
+            Object::Integer(5),
+        );
+        compare(
+            "let double = fn(x) { x * 2; }; double(5);".as_bytes(),
+            Object::Integer(10),
+        );
+        compare(
+            "let add = fn(x, y) { x + y; }; add(5, 5);".as_bytes(),
+            Object::Integer(10),
+        );
+        compare(
+            "let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));".as_bytes(),
+            Object::Integer(20),
+        );
         compare("fn(x) { x; }(5)".as_bytes(), Object::Integer(5));
-        compare("5();".as_bytes(), Object::Error(format!("5 is not a valid function")));
-        compare("false();".as_bytes(), Object::Error(format!("false is not a valid function")));
-        compare("let add = fn(x, y) { x + y; }; add(1);".as_bytes(), Object::Error(format!(
-            "wrong number of arguments: 2 expected but 1 given"
-        )));
-        compare("let a = 10; let x = fn () { a; }; x();".as_bytes(), Object::Integer(10));
-        compare("let x = fn () { a; }; let a = 10; x();".as_bytes(), Object::Integer(10));
+        compare(
+            "5();".as_bytes(),
+            Object::Error(format!("5 is not a valid function")),
+        );
+        compare(
+            "false();".as_bytes(),
+            Object::Error(format!("false is not a valid function")),
+        );
+        compare(
+            "let add = fn(x, y) { x + y; }; add(1);".as_bytes(),
+            Object::Error(format!("wrong number of arguments: 2 expected but 1 given")),
+        );
+        compare(
+            "let a = 10; let x = fn () { a; }; x();".as_bytes(),
+            Object::Integer(10),
+        );
+        compare(
+            "let x = fn () { a; }; let a = 10; x();".as_bytes(),
+            Object::Integer(10),
+        );
 
-        let fn_input1 =
-            "let add = fn(a, b, c, d) { return a + b + c + d; };\
+        let fn_input1 = "let add = fn(a, b, c, d) { return a + b + c + d; };\
              add(1, 2, 3, 4);\
-            ".as_bytes();
+            "
+            .as_bytes();
 
-        let fn_input2 =
-            "let addThree = fn(x) { return x + 3 };\
+        let fn_input2 = "let addThree = fn(x) { return x + 3 };\
              addThree(3);\
-            ".as_bytes();
+            "
+            .as_bytes();
 
-        let fn_input3 =
-            "let max = fn(x, y) { if (x > y) { x } else { y } };\
+        let fn_input3 = "let max = fn(x, y) { if (x > y) { x } else { y } };\
              max(5, 10)\
-            ".as_bytes();
+            "
+            .as_bytes();
 
-        let fn_input4 =
-            "let factorial = fn(n) {\
+        let fn_input4 = "let factorial = fn(n) {\
                 if (n == 0) {\
                     1\
                 } else {\
@@ -552,24 +644,25 @@ mod tests {
                 }\
              }\
              factorial(5)\
-            ".as_bytes();
+            "
+            .as_bytes();
 
-        let fn_input5 =
-            "let addThree = fn(x) { return x + 3 };\
+        let fn_input5 = "let addThree = fn(x) { return x + 3 };\
              let callTwoTimes = fn(x, f) { f(f(x)) }\
              callTwoTimes(3, addThree);\
-            ".as_bytes();
+            "
+            .as_bytes();
 
-        let fn_input6 =
-            "let callTwoTimes = fn(x, f) { f(f(x)) }\
+        let fn_input6 = "let callTwoTimes = fn(x, f) { f(f(x)) }\
              callTwoTimes(3, fn(x) { x + 1 });\
-            ".as_bytes();
+            "
+            .as_bytes();
 
-        let fn_input7 =
-            "let newAdder = fn(x) { fn(n) { x + n } };\
+        let fn_input7 = "let newAdder = fn(x) { fn(n) { x + n } };\
              let addTwo = newAdder(2);\
              addTwo(2);\
-            ".as_bytes();
+            "
+            .as_bytes();
 
         compare(fn_input1, Object::Integer(10));
         compare(fn_input2, Object::Integer(6));
@@ -582,38 +675,50 @@ mod tests {
 
     #[test]
     fn test_array() {
-        compare("[1, 2, 3, 4]".as_bytes(), Object::Array(vec!(
-            Object::Integer(1),
-            Object::Integer(2),
-            Object::Integer(3),
-            Object::Integer(4),
-        )));
+        compare(
+            "[1, 2, 3, 4]".as_bytes(),
+            Object::Array(vec![
+                Object::Integer(1),
+                Object::Integer(2),
+                Object::Integer(3),
+                Object::Integer(4),
+            ]),
+        );
 
-        compare("let double = fn(x) { x * 2 };[1, double(2), 3 * 3, 4 - 3]".as_bytes(),
-            Object::Array(vec!(
+        compare(
+            "let double = fn(x) { x * 2 };[1, double(2), 3 * 3, 4 - 3]".as_bytes(),
+            Object::Array(vec![
                 Object::Integer(1),
                 Object::Integer(4),
                 Object::Integer(9),
                 Object::Integer(1),
-            )
-        ));
+            ]),
+        );
 
         compare("[1, 2, 3][0]".as_bytes(), Object::Integer(1));
         compare("[1, 2, 3][1]".as_bytes(), Object::Integer(2));
         compare("[1, 2, 3][2]".as_bytes(), Object::Integer(3));
         compare("let i = 0; [1][i];".as_bytes(), Object::Integer(1));
         compare("[1, 2, 3][1 + 1];".as_bytes(), Object::Integer(3));
-        compare("let myArray = [1, 2, 3]; myArray[2];".as_bytes(), Object::Integer(3));
-        compare("let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];".as_bytes(), Object::Integer(6));
-        compare("let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i];".as_bytes(), Object::Integer(2));
+        compare(
+            "let myArray = [1, 2, 3]; myArray[2];".as_bytes(),
+            Object::Integer(3),
+        );
+        compare(
+            "let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];".as_bytes(),
+            Object::Integer(6),
+        );
+        compare(
+            "let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i];".as_bytes(),
+            Object::Integer(2),
+        );
         compare("[1, 2, 3][3]".as_bytes(), Object::Null);
         compare("[1, 2, 3][-1]".as_bytes(), Object::Null);
     }
 
     #[test]
     fn test_hash() {
-        let input_beg =
-        "let double = fn(x) {
+        let input_beg = "let double = fn(x) {
            x * 2;
          };
          let arr = [1, 2, 3, 4];
@@ -625,19 +730,45 @@ mod tests {
            true: if (10 > 8) { true } else { false },
            false: \"hello\" == \"world\"
          };
-        ".to_string();
+        "
+            .to_string();
 
-        compare((input_beg.clone() + &"h[\"one\"]".to_string()).as_bytes(), Object::Integer(1));
-        compare((input_beg.clone() + &"let s = \"two\"; h[s]".to_string()).as_bytes(), Object::Integer(2));
-        compare((input_beg.clone() + &"h[3]".to_string()).as_bytes(), Object::Integer(3));
-        compare((input_beg.clone() + &"h[2 + 2]".to_string()).as_bytes(), Object::Integer(4));
-        compare((input_beg.clone() + &"h[true]".to_string()).as_bytes(), Object::Boolean(true));
-        compare((input_beg.clone() + &"h[5 < 1]".to_string()).as_bytes(), Object::Boolean(false));
-        compare((input_beg.clone() + &"h[100]".to_string()).as_bytes(), Object::Null);
-        compare((input_beg.clone() + &"h[[]]".to_string()).as_bytes(),
-            Object::Error(format!("[] is not hashable")));
-        compare((input_beg.clone() + &"3[true];".to_string()).as_bytes(),
-            Object::Error(format!("unexpected index target: 3")));
+        compare(
+            (input_beg.clone() + &"h[\"one\"]".to_string()).as_bytes(),
+            Object::Integer(1),
+        );
+        compare(
+            (input_beg.clone() + &"let s = \"two\"; h[s]".to_string()).as_bytes(),
+            Object::Integer(2),
+        );
+        compare(
+            (input_beg.clone() + &"h[3]".to_string()).as_bytes(),
+            Object::Integer(3),
+        );
+        compare(
+            (input_beg.clone() + &"h[2 + 2]".to_string()).as_bytes(),
+            Object::Integer(4),
+        );
+        compare(
+            (input_beg.clone() + &"h[true]".to_string()).as_bytes(),
+            Object::Boolean(true),
+        );
+        compare(
+            (input_beg.clone() + &"h[5 < 1]".to_string()).as_bytes(),
+            Object::Boolean(false),
+        );
+        compare(
+            (input_beg.clone() + &"h[100]".to_string()).as_bytes(),
+            Object::Null,
+        );
+        compare(
+            (input_beg.clone() + &"h[[]]".to_string()).as_bytes(),
+            Object::Error(format!("[] is not hashable")),
+        );
+        compare(
+            (input_beg.clone() + &"3[true];".to_string()).as_bytes(),
+            Object::Error(format!("unexpected index target: 3")),
+        );
     }
 
     #[test]
@@ -645,9 +776,18 @@ mod tests {
         // len
         compare("len(\"hello world!\")".as_bytes(), Object::Integer(12));
         compare("len(\"\")".as_bytes(), Object::Integer(0));
-        compare("len(\"Hey Bob, how ya doin?\")".as_bytes(), Object::Integer(21));
-        compare("len(3)".as_bytes(), Object::Error(format!("invalid arguments for len")));
-        compare("len(\"hello\", \"world\")".as_bytes(), Object::Error(format!("wrong number of arguments: 1 expected but 2 given")));
+        compare(
+            "len(\"Hey Bob, how ya doin?\")".as_bytes(),
+            Object::Integer(21),
+        );
+        compare(
+            "len(3)".as_bytes(),
+            Object::Error(format!("invalid arguments for len")),
+        );
+        compare(
+            "len(\"hello\", \"world\")".as_bytes(),
+            Object::Error(format!("wrong number of arguments: 1 expected but 2 given")),
+        );
         compare("len([])".as_bytes(), Object::Integer(0));
         compare("len([1, 2, 3, 4])".as_bytes(), Object::Integer(4));
         // head
@@ -655,20 +795,32 @@ mod tests {
         compare("head([1, 2, 3, 4])".as_bytes(), Object::Integer(1));
         compare("head([])".as_bytes(), Object::Error(format!("empty array")));
         // tail
-        compare("tail([1])".as_bytes(), Object::Array(vec!()));
-        compare("tail([1, 2, 3, 4])".as_bytes(),
-            Object::Array(vec!(Object::Integer(2), Object::Integer(3), Object::Integer(4))));
+        compare("tail([1])".as_bytes(), Object::Array(vec![]));
+        compare(
+            "tail([1, 2, 3, 4])".as_bytes(),
+            Object::Array(vec![
+                Object::Integer(2),
+                Object::Integer(3),
+                Object::Integer(4),
+            ]),
+        );
         compare("tail([])".as_bytes(), Object::Error(format!("empty array")));
         // cons
-        compare("cons(1, [])".as_bytes(), Object::Array(vec!(Object::Integer(1))));
-        compare("cons(1, [2, 3, 4])".as_bytes(),
-            Object::Array(vec!(
-                Object::Integer(1), Object::Integer(2), Object::Integer(3), Object::Integer(4))
-            )
+        compare(
+            "cons(1, [])".as_bytes(),
+            Object::Array(vec![Object::Integer(1)]),
+        );
+        compare(
+            "cons(1, [2, 3, 4])".as_bytes(),
+            Object::Array(vec![
+                Object::Integer(1),
+                Object::Integer(2),
+                Object::Integer(3),
+                Object::Integer(4),
+            ]),
         );
         // map reduce
-        let map_decl =
-            "let map = fn(f, arr) {\
+        let map_decl = "let map = fn(f, arr) {\
               if (len(arr) == 0) {\
                 []\
               } else {\
@@ -676,10 +828,10 @@ mod tests {
                 cons(f(h), map(f, tail(arr)));\
               }\
             };\
-            ".to_string();
+            "
+            .to_string();
 
-        let reduce_decl =
-            "let reduce = fn(f, init, arr) {\
+        let reduce_decl = "let reduce = fn(f, init, arr) {\
                 if (len(arr) == 0) {\
                     init\
                 } else {\
@@ -687,16 +839,23 @@ mod tests {
                     reduce(f, newInit, tail(arr));\
                 }\
             };\
-            ".to_string();
+            "
+            .to_string();
 
-        compare((map_decl + &"let double = fn(x) { x * 2 }; map(double, [1, 2, 3, 4])").as_bytes(),
-            Object::Array(vec!(
-                Object::Integer(2), Object::Integer(4), Object::Integer(6), Object::Integer(8))
-            )
+        compare(
+            (map_decl + &"let double = fn(x) { x * 2 }; map(double, [1, 2, 3, 4])").as_bytes(),
+            Object::Array(vec![
+                Object::Integer(2),
+                Object::Integer(4),
+                Object::Integer(6),
+                Object::Integer(8),
+            ]),
         );
 
-        compare((reduce_decl + &"let add = fn(x, y) { x + y }; reduce(add, 0, [1, 2, 3, 4, 5])").as_bytes(),
-            Object::Integer(15)
+        compare(
+            (reduce_decl + &"let add = fn(x, y) { x + y }; reduce(add, 0, [1, 2, 3, 4, 5])")
+                .as_bytes(),
+            Object::Integer(15),
         );
     }
 }

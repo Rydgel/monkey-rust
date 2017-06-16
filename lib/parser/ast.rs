@@ -15,9 +15,16 @@ pub enum Expr {
     LitExpr(Literal),
     PrefixExpr(Prefix, Box<Expr>),
     InfixExpr(Infix, Box<Expr>, Box<Expr>),
-    IfExpr { cond: Box<Expr>, consequence: BlockStmt, alternative: Option<BlockStmt> },
+    IfExpr {
+        cond: Box<Expr>,
+        consequence: BlockStmt,
+        alternative: Option<BlockStmt>,
+    },
     FnExpr { params: Vec<Ident>, body: BlockStmt },
-    CallExpr { function: Box<Expr>, arguments: Vec<Expr> },
+    CallExpr {
+        function: Box<Expr>,
+        arguments: Vec<Expr>,
+    },
     ArrayExpr(Vec<Expr>),
     HashExpr(Vec<(Literal, Expr)>),
     IndexExpr { array: Box<Expr>, index: Box<Expr> },

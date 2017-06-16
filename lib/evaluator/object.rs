@@ -42,7 +42,13 @@ impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Object::Integer(ref i) => write!(f, "{}", i),
-            Object::Boolean(ref b) => if *b { write!(f, "true") } else { write!(f, "false") },
+            Object::Boolean(ref b) => {
+                if *b {
+                    write!(f, "true")
+                } else {
+                    write!(f, "false")
+                }
+            }
             Object::String(ref s) => write!(f, "{}", s),
             Object::Array(ref v) => {
                 let mut fmt_string = String::new();
@@ -55,7 +61,7 @@ impl fmt::Display for Object {
                 }
                 fmt_string.push_str("]");
                 write!(f, "{}", fmt_string)
-            },
+            }
             Object::Hash(ref hashmap) => {
                 let mut fmt_string = String::new();
                 fmt_string.push_str("{");
@@ -67,7 +73,7 @@ impl fmt::Display for Object {
                 }
                 fmt_string.push_str("}");
                 write!(f, "{}", fmt_string)
-            },
+            }
             Object::Function(_, _, _) => write!(f, "[function]"),
             Object::Builtin(ref name, _, _) => write!(f, "[built-in function: {}]", *name),
             Object::Null => write!(f, "null"),
@@ -77,7 +83,7 @@ impl fmt::Display for Object {
     }
 }
 
-impl Eq for Object { }
+impl Eq for Object {}
 
 impl Hash for Object {
     fn hash<H: Hasher>(&self, state: &mut H) {
