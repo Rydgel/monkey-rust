@@ -39,9 +39,8 @@ impl Environment {
     fn fill_env_with_builtins(hashmap: &mut HashMap<String, Object>) {
         let builtins_functions = BuiltinsFunctions::new();
         let builtins = builtins_functions.get_builtins();
-        for (ident, object) in builtins {
-            let Ident(name) = ident.clone();
-            hashmap.insert(name.clone(), object);
+        for (Ident(name), object) in builtins {
+            hashmap.insert(name, object);
         }
     }
 
