@@ -32,7 +32,7 @@ fn main() {
     }
 
     println!();
-    println!("This is the monkey language repl v0.2.2");
+    println!("This is the monkey language repl v0.2.3");
     println!("Press Ctrl-D or enter \"quit\" to exit.");
     println!();
 
