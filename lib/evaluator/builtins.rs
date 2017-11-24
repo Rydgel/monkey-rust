@@ -85,7 +85,7 @@ fn btail_fn(args: Vec<Object>) -> Result<Object, String> {
 fn bcons_fn(args: Vec<Object>) -> Result<Object, String> {
     let mut args = args.iter();
     match (args.next(), args.next()) {
-        (Some(&ref o), Some(&Object::Array(ref os))) => {
+        (Some(o), Some(&Object::Array(ref os))) => {
             let mut vectors = vec![];
             vectors.push(o.clone());
             for object in os {

@@ -50,7 +50,7 @@ fn main() {
                         let parsed = Parser::parse_tokens(tokens);
                         match parsed {
                             IResult::Done(_, program) => {
-                                let eval = evaluator.eval_program(program);
+                                let eval = evaluator.eval_program(&program);
                                 println!("{}", eval);
                             }
                             IResult::Error(_) => println!("Parser error"),

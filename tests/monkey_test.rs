@@ -24,7 +24,7 @@ fn test_example_hash() {
         .unwrap();
     let tokens = Tokens::new(&lex_tokens);
     let program = Parser::parse_tokens(tokens).to_result().unwrap();
-    let eval = evaluator.eval_program(program);
+    let eval = evaluator.eval_program(&program);
     assert_eq!(eval, Object::Null);
 }
 
@@ -37,6 +37,6 @@ fn test_reduce() {
         .unwrap();
     let tokens = Tokens::new(&lex_tokens);
     let program = Parser::parse_tokens(tokens).to_result().unwrap();
-    let eval = evaluator.eval_program(program);
+    let eval = evaluator.eval_program(&program);
     assert_eq!(eval, Object::Null);
 }

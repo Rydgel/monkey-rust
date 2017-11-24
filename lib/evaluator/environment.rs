@@ -51,7 +51,7 @@ impl Environment {
 
     pub fn get(&self, name: &str) -> Option<Object> {
         match self.store.get(name) {
-            Some(&ref o) => Some(o.clone()),
+            Some(o) => Some(o.clone()),
             None => {
                 match self.parent {
                     Some(ref parent_env) => {

@@ -31,12 +31,12 @@ impl Evaluator {
         }
     }
 
-    pub fn eval_program(&mut self, prog: Program) -> Object {
+    pub fn eval_program(&mut self, prog: &Program) -> Object {
         let return_data = self.eval_blockstmt(prog);
         self.returned(return_data)
     }
 
-    pub fn eval_blockstmt(&mut self, prog: BlockStmt) -> Object {
+    pub fn eval_blockstmt(&mut self, prog: &BlockStmt) -> Object {
         match prog.len() {
             0 => Object::Null,
             1 => self.eval_statement(prog[0].clone()),
@@ -47,7 +47,7 @@ impl Evaluator {
                 if object.is_returned() {
                     object
                 } else {
-                    self.eval_blockstmt(ss.to_vec())
+                    self.eval_blockstmt(&ss.to_vec())
                 }
             }
         }
@@ -74,20 +74,20 @@ impl Evaluator {
         match expr {
             Expr::IdentExpr(i) => self.eval_ident(i),
             Expr::LitExpr(l) => self.eval_literal(l),
-            Expr::PrefixExpr(prefix, expr) => self.eval_prefix(prefix, *expr),
-            Expr::InfixExpr(infix, expr1, expr2) => self.eval_infix(infix, *expr1, *expr2),
+            Expr::PrefixExpr(prefix, expr) => self.eval_prefix(&prefix, *expr),
+            Expr::InfixExpr(infix, expr1, expr2) => self.eval_infix(&infix, *expr1, *expr2),
             Expr::IfExpr {
                 cond,
                 consequence,
                 alternative,
-            } => self.eval_if(*cond, consequence, alternative),
+            } => self.eval_if(*cond, &consequence, alternative),
             Expr::FnExpr { params, body } => self.eval_fn(params, body),
             Expr::CallExpr {
                 function: fn_exp,
                 arguments,
-            } => self.eval_call(*fn_exp, arguments),
-            Expr::ArrayExpr(exprs) => self.eval_array(exprs),
-            Expr::HashExpr(hash_exprs) => self.eval_hash(hash_exprs),
+            } => self.eval_call(*fn_exp, &arguments),
+            Expr::ArrayExpr(exprs) => self.eval_array(&exprs),
+            Expr::HashExpr(hash_exprs) => self.eval_hash(&hash_exprs),
             Expr::IndexExpr { array, index } => self.eval_index(*array, *index),
         }
     }
@@ -110,9 +110,9 @@ impl Evaluator {
         }
     }
 
-    pub fn eval_prefix(&mut self, prefix: Prefix, expr: Expr) -> Object {
+    pub fn eval_prefix(&mut self, prefix: &Prefix, expr: Expr) -> Object {
         let object = self.eval_expr(expr);
-        match prefix {
+        match *prefix {
             Prefix::Not => {
                 match self.otb(object) {
                     Ok(b) => Object::Boolean(!b),
@@ -134,10 +134,10 @@ impl Evaluator {
         }
     }
 
-    pub fn eval_infix(&mut self, infix: Infix, expr1: Expr, expr2: Expr) -> Object {
+    pub fn eval_infix(&mut self, infix: &Infix, expr1: Expr, expr2: Expr) -> Object {
         let object1 = self.eval_expr(expr1);
         let object2 = self.eval_expr(expr2);
-        match infix {
+        match *infix {
             Infix::Plus => self.object_add(object1, object2),
             Infix::Minus => {
                 let i1 = self.oti(object1);
@@ -203,7 +203,7 @@ impl Evaluator {
     pub fn eval_if(
         &mut self,
         cond: Expr,
-        conse: BlockStmt,
+        conse: &BlockStmt,
         maybe_alter: Option<BlockStmt>,
     ) -> Object {
         let object = self.eval_expr(cond);
@@ -213,7 +213,7 @@ impl Evaluator {
                     self.eval_blockstmt(conse)
                 } else {
                     match maybe_alter {
-                        Some(else_conse) => self.eval_blockstmt(else_conse),
+                        Some(else_conse) => self.eval_blockstmt(&else_conse),
                         _ => Object::Null,
                     }
                 }
@@ -223,15 +223,15 @@ impl Evaluator {
     }
 
     pub fn eval_fn(&mut self, params: Vec<Ident>, body: BlockStmt) -> Object {
-        Object::Function(params, body, self.env.clone())
+        Object::Function(params, body, Rc::clone(&self.env))
     }
 
-    pub fn eval_call(&mut self, fn_expr: Expr, args_expr: Vec<Expr>) -> Object {
+    pub fn eval_call(&mut self, fn_expr: Expr, args_expr: &[Expr]) -> Object {
         let fn_object = self.eval_expr(fn_expr);
         let fn_ = self.otf(fn_object);
         match fn_ {
             Object::Function(params, body, f_env) => {
-                self.eval_fn_call(args_expr, params, body, f_env)
+                self.eval_fn_call(args_expr, &params, &body, &f_env)
             }
             Object::Builtin(_, num_params, b_fn) => {
                 self.eval_builtin_call(args_expr, num_params, b_fn)
@@ -242,10 +242,10 @@ impl Evaluator {
 
     fn eval_fn_call(
         &mut self,
-        args_expr: Vec<Expr>,
-        params: Vec<Ident>,
-        body: BlockStmt,
-        f_env: Rc<RefCell<Environment>>,
+        args_expr: &[Expr],
+        params: &[Ident],
+        body: &BlockStmt,
+        f_env: &Rc<RefCell<Environment>>,
     ) -> Object {
         if args_expr.len() != params.len() {
             Object::Error(format!(
@@ -256,10 +256,10 @@ impl Evaluator {
         } else {
             let args = args_expr
                 .iter()
-                .map(|&ref e| self.eval_expr(e.clone()))
+                .map(|e| self.eval_expr(e.clone()))
                 .collect::<Vec<_>>();
-            let old_env = self.env.clone();
-            let mut new_env = Environment::new_with_outer(f_env.clone());
+            let old_env = Rc::clone(&self.env);
+            let mut new_env = Environment::new_with_outer(Rc::clone(f_env));
             let zipped = params.iter().zip(args.iter());
             for (_, (ident, o)) in zipped.enumerate() {
                 let Ident(name) = ident.clone();
@@ -274,7 +274,7 @@ impl Evaluator {
 
     fn eval_builtin_call(
         &mut self,
-        args_expr: Vec<Expr>,
+        args_expr: &[Expr],
         num_params: usize,
         b_fn: BuiltinFunction,
     ) -> Object {
@@ -287,7 +287,7 @@ impl Evaluator {
         } else {
             let args = args_expr
                 .iter()
-                .map(|&ref e| self.eval_expr(e.clone()))
+                .map(|e| self.eval_expr(e.clone()))
                 .collect::<Vec<_>>();
             let res = b_fn(args);
             match res {
@@ -297,10 +297,10 @@ impl Evaluator {
         }
     }
 
-    pub fn eval_array(&mut self, exprs: Vec<Expr>) -> Object {
+    pub fn eval_array(&mut self, exprs: &[Expr]) -> Object {
         let new_vec = exprs
             .iter()
-            .map(|&ref e| self.eval_expr(e.clone()))
+            .map(|e| self.eval_expr(e.clone()))
             .collect::<Vec<_>>();
         Object::Array(new_vec)
     }
@@ -315,9 +315,9 @@ impl Evaluator {
         }
     }
 
-    pub fn eval_hash(&mut self, hs: Vec<(Literal, Expr)>) -> Object {
+    pub fn eval_hash(&mut self, hs: &[(Literal, Expr)]) -> Object {
         let mut hashmap = HashMap::new();
-        for pair in &hs {
+        for pair in hs.iter() {
             let (k, v) = self.eval_pair(pair.clone());
             hashmap.insert(k, v);
         }
@@ -339,7 +339,7 @@ impl Evaluator {
                 match self.oti(index) {
                     Ok(index_number) => {
                         let null_object = Object::Null;
-                        let &ref object = arr.get(index_number as usize).unwrap_or(&null_object);
+                        let object = arr.get(index_number as usize).unwrap_or(&null_object);
                         object.clone()
                     }
                     Err(err) => err,
@@ -351,7 +351,7 @@ impl Evaluator {
                     Object::Error(_) => name,
                     _ => {
                         let null_object = Object::Null;
-                        let &ref object = hash.get(&name).unwrap_or(&null_object);
+                        let object = hash.get(&name).unwrap_or(&null_object);
                         object.clone()
                     }
                 }
@@ -414,7 +414,7 @@ mod tests {
         let tokens = Tokens::new(&r);
         let result_parse = Parser::parse_tokens(tokens).to_result().unwrap();
         let mut evaluator = Evaluator::new();
-        let eval = evaluator.eval_program(result_parse);
+        let eval = evaluator.eval_program(&result_parse);
         assert_eq!(eval, object);
     }
 
