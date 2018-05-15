@@ -7,7 +7,7 @@ pub enum Command {
 
 pub fn read_command() -> Command {
     let matches = clap_app!(monkey =>
-        (version: "0.2.3")
+        (version: "0.3.0")
         (author: "Jérôme Mahuet <jerome.mahuet@gmail.com>")
         (about: "The Monkey programming language")
         (@setting ArgRequiredElseHelp)

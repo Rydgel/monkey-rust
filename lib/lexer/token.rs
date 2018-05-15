@@ -68,6 +68,40 @@ impl<'a> InputLength for Tokens<'a> {
     }
 }
 
+impl<'a> AtEof for Tokens<'a> {
+    #[inline]
+    fn at_eof(&self) -> bool {
+        true
+    }
+}
+
+impl<'a> InputTake for Tokens<'a> {
+    #[inline]
+    fn take(&self, count: usize) -> Self {
+        Tokens {
+            tok: &self.tok[0..count],
+            start: 0,
+            end: count,
+        }
+    }
+
+    #[inline]
+    fn take_split(&self, count: usize) -> (Self, Self) {
+        let (prefix, suffix) = self.tok.split_at(count);
+        let first = Tokens {
+            tok: prefix,
+            start: 0,
+            end: prefix.len(),
+        };
+        let second = Tokens {
+            tok: suffix,
+            start: 0,
+            end: suffix.len(),
+        };
+        (second, first)
+    }
+}
+
 impl InputLength for Token {
     #[inline]
     fn input_len(&self) -> usize {

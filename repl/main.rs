@@ -32,7 +32,7 @@ fn main() {
     }
 
     println!();
-    println!("This is the monkey language repl v0.2.3");
+    println!("This is the monkey language repl v0.3.0");
     println!("Press Ctrl-D or enter \"quit\" to exit.");
     println!();
 
@@ -45,20 +45,22 @@ fn main() {
                 rl.add_history_entry(line.as_ref());
                 let lex_tokens = Lexer::lex_tokens(line.as_bytes());
                 match lex_tokens {
-                    IResult::Done(_, r) => {
+                    Ok((_, r)) => {
                         let tokens = Tokens::new(&r);
                         let parsed = Parser::parse_tokens(tokens);
                         match parsed {
-                            IResult::Done(_, program) => {
+                            Ok((_, program)) => {
                                 let eval = evaluator.eval_program(&program);
                                 println!("{}", eval);
                             }
-                            IResult::Error(_) => println!("Parser error"),
-                            IResult::Incomplete(_) => println!("Incomplete parsing"),
+                            Err(Err::Error(_)) => println!("Parser error"),
+                            Err(Err::Failure(_)) => println!("Parser failure"),
+                            Err(Err::Incomplete(_)) => println!("Incomplete parsing"),
                         }
                     }
-                    IResult::Error(_) => println!("Lexer error"),
-                    IResult::Incomplete(_) => println!("Incomplete lexing"),
+                    Err(Err::Error(_)) => println!("Lexer error"),
+                    Err(Err::Failure(_)) => println!("Lexer failure"),
+                    Err(Err::Incomplete(_)) => println!("Incomplete lexing"),
                 }
             }
             Err(ReadlineError::Interrupted) => {

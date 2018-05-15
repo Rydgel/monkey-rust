@@ -410,9 +410,9 @@ mod tests {
     use parser::*;
 
     fn compare(input: &[u8], object: Object) {
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let (_, r) = Lexer::lex_tokens(input).unwrap();
         let tokens = Tokens::new(&r);
-        let result_parse = Parser::parse_tokens(tokens).to_result().unwrap();
+        let (_, result_parse) = Parser::parse_tokens(tokens).unwrap();
         let mut evaluator = Evaluator::new();
         let eval = evaluator.eval_program(&result_parse);
         assert_eq!(eval, object);

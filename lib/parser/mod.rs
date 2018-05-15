@@ -9,14 +9,18 @@ use parser::ast::Literal::*;
 macro_rules! tag_token (
   ($i: expr, $tag: expr) => (
     {
+        use std::result::Result::*;
+        use nom::{Err,ErrorKind};
+
         let (i1, t1) = try_parse!($i, take!(1));
+
         if t1.tok.is_empty() {
-            IResult::Incomplete::<_,_,u32>(Needed::Size(1))
+            Err(Err::Incomplete(Needed::Size(1)))
         } else {
             if t1.tok[0] == $tag {
-                IResult::Done(i1, t1)
+                Ok((i1, t1))
             } else {
-                IResult::Error(error_position!(ErrorKind::Count, $i))
+                Err(Err::Error(error_position!($i, ErrorKind::Count)))
             }
         }
     }
@@ -26,13 +30,16 @@ macro_rules! tag_token (
 macro_rules! parse_ident (
   ($i: expr,) => (
     {
+        use std::result::Result::*;
+        use nom::{Err,ErrorKind};
+
         let (i1, t1) = try_parse!($i, take!(1));
         if t1.tok.is_empty() {
-            IResult::Error(error_position!(ErrorKind::Tag, $i))
+            Err(Err::Error(error_position!($i, ErrorKind::Tag)))
         } else {
             match t1.tok[0].clone() {
-                Token::Ident(name) => IResult::Done(i1, Ident(name)),
-                _ => IResult::Error(error_position!(ErrorKind::Tag, $i)),
+                Token::Ident(name) => Ok((i1, Ident(name))),
+                _ => Err(Err::Error(error_position!($i, ErrorKind::Tag))),
             }
         }
     }
@@ -42,15 +49,18 @@ macro_rules! parse_ident (
 macro_rules! parse_literal (
   ($i: expr,) => (
     {
+        use std::result::Result::*;
+        use nom::{Err,ErrorKind};
+
         let (i1, t1) = try_parse!($i, take!(1));
         if t1.tok.is_empty() {
-            IResult::Error(error_position!(ErrorKind::Tag, $i))
+            Err(Err::Error(error_position!($i, ErrorKind::Tag)))
         } else {
             match t1.tok[0].clone() {
-                Token::IntLiteral(i) => IResult::Done(i1, IntLiteral(i)),
-                Token::BoolLiteral(b) => IResult::Done(i1, BoolLiteral(b)),
-                Token::StringLiteral(s) => IResult::Done(i1, StringLiteral(s)),
-                _ => IResult::Error(error_position!(ErrorKind::Tag, $i)),
+                Token::IntLiteral(i) => Ok((i1, IntLiteral(i))),
+                Token::BoolLiteral(b) => Ok((i1, BoolLiteral(b))),
+                Token::StringLiteral(s) => Ok((i1, StringLiteral(s))),
+                _ => Err(Err::Error(error_position!($i, ErrorKind::Tag))),
             }
         }
     }
@@ -99,7 +109,7 @@ named!(parse_let_stmt<Tokens, Stmt>,
         ident: parse_ident!() >>
         tag_token!(Token::Assign) >>
         expr: parse_expr >>
-        o: opt!(tag_token!(Token::SemiColon)) >>
+        _o: opt!(tag_token!(Token::SemiColon)) >>
         (Stmt::LetStmt(ident, expr))
     )
 );
@@ -181,7 +191,7 @@ named!(parse_exprs<Tokens, Vec<Expr>>,
 );
 
 fn empty_boxed_vec(i: Tokens) -> IResult<Tokens, Vec<Expr>> {
-    IResult::Done(i, vec![])
+    Ok((i, vec![]))
 }
 
 named!(parse_array_expr<Tokens, Expr>,
@@ -219,7 +229,7 @@ named!(parse_hash_pairs<Tokens, Vec<(Literal, Expr)>>,
 );
 
 fn empty_pairs(i: Tokens) -> IResult<Tokens, Vec<(Literal, Expr)>> {
-    IResult::Done(i, vec![])
+    Ok((i, vec![]))
 }
 
 named!(parse_hash_expr<Tokens, Expr>,
@@ -239,15 +249,15 @@ fn parse_prefix_expr(input: Tokens) -> IResult<Tokens, Expr> {
         );
 
     if t1.tok.is_empty() {
-        IResult::Error(error_position!(ErrorKind::Tag, input))
+        Err(Err::Error(error_position!(input, ErrorKind::Tag)))
     } else {
         let (i2, e) = try_parse!(i1, parse_atom_expr);
 
         match t1.tok[0].clone() {
-            Token::Plus => IResult::Done(i2, Expr::PrefixExpr(Prefix::PrefixPlus, Box::new(e))),
-            Token::Minus => IResult::Done(i2, Expr::PrefixExpr(Prefix::PrefixMinus, Box::new(e))),
-            Token::Not => IResult::Done(i2, Expr::PrefixExpr(Prefix::Not, Box::new(e))),
-            _ => IResult::Error(ErrorKind::Custom(66)),
+            Token::Plus => Ok((i2, Expr::PrefixExpr(Prefix::PrefixPlus, Box::new(e)))),
+            Token::Minus => Ok((i2, Expr::PrefixExpr(Prefix::PrefixMinus, Box::new(e)))),
+            Token::Not => Ok((i2, Expr::PrefixExpr(Prefix::Not, Box::new(e)))),
+            _ => Err(Err::Error(error_position!(input, ErrorKind::Tag))),
         }
     }
 }
@@ -263,7 +273,7 @@ fn parse_pratt_expr(input: Tokens, precedence: Precedence) -> IResult<Tokens, Ex
 fn go_parse_pratt_expr(input: Tokens, precedence: Precedence, left: Expr) -> IResult<Tokens, Expr> {
     let (i1, t1) = try_parse!(input, take!(1));
     if t1.tok.is_empty() {
-        IResult::Done(i1, left)
+        Ok((i1, left))
     } else {
         let preview = t1.tok[0].clone();
         match infix_op(&preview) {
@@ -279,7 +289,7 @@ fn go_parse_pratt_expr(input: Tokens, precedence: Precedence, left: Expr) -> IRe
                 let (i2, left2) = try_parse!(input, apply!(parse_infix_expr, left));
                 go_parse_pratt_expr(i2, precedence, left2)
             }
-            _ => IResult::Done(input, left),
+            _ => Ok((input, left)),
         }
     }
 }
@@ -287,15 +297,15 @@ fn go_parse_pratt_expr(input: Tokens, precedence: Precedence, left: Expr) -> IRe
 fn parse_infix_expr(input: Tokens, left: Expr) -> IResult<Tokens, Expr> {
     let (i1, t1) = try_parse!(input, take!(1));
     if t1.tok.is_empty() {
-        IResult::Error(error_position!(ErrorKind::Tag, input))
+        Err(Err::Error(error_position!(input, ErrorKind::Tag)))
     } else {
         let next = t1.tok[0].clone();
         let (precedence, maybe_op) = infix_op(&next);
         match maybe_op {
-            None => IResult::Error(error_position!(ErrorKind::Tag, input)),
+            None => Err(Err::Error(error_position!(input, ErrorKind::Tag))),
             Some(op) => {
                 let (i2, right) = try_parse!(i1, apply!(parse_pratt_expr, precedence));
-                IResult::Done(i2, Expr::InfixExpr(op, Box::new(left), Box::new(right)))
+                Ok((i2, Expr::InfixExpr(op, Box::new(left), Box::new(right))))
             }
         }
     }
@@ -338,7 +348,7 @@ named!(parse_else_expr<Tokens, Option<BlockStmt>>,
 );
 
 fn empty_params(i: Tokens) -> IResult<Tokens, Vec<Ident>> {
-    IResult::Done(i, vec![])
+    Ok((i, vec![]))
 }
 
 named!(parse_fn_expr<Tokens, Expr>,
@@ -378,20 +388,20 @@ mod tests {
     use lexer::*;
 
     fn assert_input_with_program(input: &[u8], expected_results: Program) {
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let (_, r) = Lexer::lex_tokens(input).unwrap();
         let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+        let (_, result) = Parser::parse_tokens(tokens).unwrap();
         assert_eq!(result, expected_results);
     }
 
     fn compare_inputs(input: &[u8], input2: &[u8]) {
-        let r = Lexer::lex_tokens(input).to_result().unwrap();
+        let (_, r) = Lexer::lex_tokens(input).unwrap();
         let tokens = Tokens::new(&r);
-        let result = Parser::parse_tokens(tokens).to_result().unwrap();
+        let (_, result) = Parser::parse_tokens(tokens).unwrap();
 
-        let r = Lexer::lex_tokens(input2).to_result().unwrap();
+        let (_, r) = Lexer::lex_tokens(input2).unwrap();
         let tokens = Tokens::new(&r);
-        let expected_results = Parser::parse_tokens(tokens).to_result().unwrap();
+        let (_, expected_results) = Parser::parse_tokens(tokens).unwrap();
 
         assert_eq!(result, expected_results);
     }
