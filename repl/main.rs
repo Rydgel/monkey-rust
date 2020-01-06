@@ -4,7 +4,7 @@ extern crate nom;
 
 use rustyline::completion::FilenameCompleter;
 use rustyline::error::ReadlineError;
-use rustyline::{Config, CompletionType, Editor};
+use rustyline::{Config, Editor};
 use monkey_lib::lexer::*;
 use monkey_lib::lexer::token::*;
 use monkey_lib::parser::*;
@@ -19,14 +19,7 @@ static PROMPT: &'static str = "monkey >> ";
 
 
 fn main() {
-    let config = Config::builder()
-        .history_ignore_space(true)
-        .completion_type(CompletionType::List)
-        .build();
-    let c = FilenameCompleter::new();
-    let mut rl = Editor::with_config(config);
-    rl.set_completer(Some(c));
-
+    let mut rl = Editor::<()>::new();
     if rl.load_history("history.txt").is_err() {
         println!("No previous history.");
     }
@@ -42,7 +35,7 @@ fn main() {
         let readline = rl.readline(PROMPT);
         match readline {
             Ok(line) => {
-                rl.add_history_entry(line.as_ref());
+                rl.add_history_entry(line.as_str());
                 let lex_tokens = Lexer::lex_tokens(line.as_bytes());
                 match lex_tokens {
                     Ok((_, r)) => {
