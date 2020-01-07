@@ -3,13 +3,13 @@ extern crate monkey_lib;
 extern crate clap;
 extern crate nom;
 
+use monkey_lib::evaluator::*;
+use monkey_lib::lexer::token::*;
+use monkey_lib::lexer::*;
+use monkey_lib::parser::*;
+use nom::*;
 use std::fs::File;
 use std::io::prelude::*;
-use nom::*;
-use monkey_lib::lexer::*;
-use monkey_lib::lexer::token::*;
-use monkey_lib::parser::*;
-use monkey_lib::evaluator::*;
 
 use cmd::*;
 mod cmd;

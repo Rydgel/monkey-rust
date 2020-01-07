@@ -1,5 +1,5 @@
-use parser::ast::*;
 use evaluator::object::*;
+use parser::ast::*;
 
 pub struct BuiltinsFunctions;
 
@@ -57,27 +57,23 @@ fn blen_fn(args: Vec<Object>) -> Result<Object, String> {
 
 fn bhead_fn(args: Vec<Object>) -> Result<Object, String> {
     match args.iter().next() {
-        Some(&Object::Array(ref arr)) => {
-            match arr.first() {
-                None => Err(String::from("empty array")),
-                Some(x) => Ok(x.clone()),
-            }
-        }
+        Some(&Object::Array(ref arr)) => match arr.first() {
+            None => Err(String::from("empty array")),
+            Some(x) => Ok(x.clone()),
+        },
         _ => Err(String::from("invalid arguments for head")),
     }
 }
 
 fn btail_fn(args: Vec<Object>) -> Result<Object, String> {
     match args.iter().next() {
-        Some(&Object::Array(ref arr)) => {
-            match arr.len() {
-                0 => Err(String::from("empty array")),
-                _ => {
-                    let tail = &arr[1..];
-                    Ok(Object::Array(tail.to_vec()))
-                }
+        Some(&Object::Array(ref arr)) => match arr.len() {
+            0 => Err(String::from("empty array")),
+            _ => {
+                let tail = &arr[1..];
+                Ok(Object::Array(tail.to_vec()))
             }
-        }
+        },
         _ => Err(String::from("invalid arguments for tail")),
     }
 }

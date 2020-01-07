@@ -1,6 +1,6 @@
 use nom::*;
-use std::ops::{Range, RangeTo, RangeFrom, RangeFull};
 use std::iter::Enumerate;
+use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Token {

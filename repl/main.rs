@@ -1,22 +1,21 @@
 extern crate monkey_lib;
-extern crate rustyline;
 extern crate nom;
+extern crate rustyline;
 
+use monkey_lib::evaluator::*;
+use monkey_lib::lexer::token::*;
+use monkey_lib::lexer::*;
+use monkey_lib::parser::*;
+use nom::*;
 use rustyline::completion::FilenameCompleter;
 use rustyline::error::ReadlineError;
 use rustyline::{Config, Editor};
-use monkey_lib::lexer::*;
-use monkey_lib::lexer::token::*;
-use monkey_lib::parser::*;
-use monkey_lib::evaluator::*;
-use nom::*;
 
 #[cfg(unix)]
 static PROMPT: &'static str = "\x1b[1;32mmonkey >>\x1b[0m ";
 
 #[cfg(windows)]
 static PROMPT: &'static str = "monkey >> ";
-
 
 fn main() {
     let mut rl = Editor::<()>::new();

@@ -1,12 +1,11 @@
-use nom::*;
 use nom::types::*;
+use nom::*;
 use std::str;
 use std::str::FromStr;
 use std::str::Utf8Error;
 
 pub mod token;
 use lexer::token::*;
-
 
 // operators
 named!(equal_operator<CompleteByteSlice, Token>,
@@ -72,7 +71,6 @@ named!(lex_operator<CompleteByteSlice, Token>, alt!(
     lesser_operator
 ));
 
-
 // punctuations
 named!(comma_punctuation<CompleteByteSlice, Token>,
   do_parse!(tag!(",") >> (Token::Comma))
@@ -133,9 +131,7 @@ fn pis(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Vec<u8>> {
             let (i2, c2) = try_parse!(i1, take!(1));
             pis(i2).map(|(slice, done)| (slice, concat_slice_vec(c2.0, done)))
         }
-        c => {
-            pis(i1).map(|(slice, done)| (slice, concat_slice_vec(c, done)))
-        },
+        c => pis(i1).map(|(slice, done)| (slice, concat_slice_vec(c, done))),
     }
 }
 
@@ -251,14 +247,12 @@ named!(lex_token<CompleteByteSlice, Token>, alt_complete!(
 
 named!(lex_tokens<CompleteByteSlice, Vec<Token>>, ws!(many0!(lex_token)));
 
-
 pub struct Lexer;
 
 impl Lexer {
     pub fn lex_tokens(bytes: &[u8]) -> IResult<CompleteByteSlice, Vec<Token>> {
-        lex_tokens(CompleteByteSlice(bytes)).map(|(slice, result)|
-            (slice, [&result[..], &vec![Token::EOF][..]].concat())
-        )
+        lex_tokens(CompleteByteSlice(bytes))
+            .map(|(slice, result)| (slice, [&result[..], &vec![Token::EOF][..]].concat()))
     }
 }
 
@@ -356,7 +350,7 @@ mod tests {
             }\
             return false;\
             "
-            .as_bytes();
+        .as_bytes();
 
         let (_, result) = Lexer::lex_tokens(input).unwrap();
 
@@ -426,31 +420,49 @@ mod tests {
     #[test]
     fn string_literals() {
         let (_, result) = Lexer::lex_tokens(&b"\"foobar\""[..]).unwrap();
-        assert_eq!(result, vec![Token::StringLiteral("foobar".to_owned()), Token::EOF]);
+        assert_eq!(
+            result,
+            vec![Token::StringLiteral("foobar".to_owned()), Token::EOF]
+        );
 
         let (_, result) = Lexer::lex_tokens(&b"\"foo bar\""[..]).unwrap();
-        assert_eq!(result, vec![Token::StringLiteral("foo bar".to_owned()), Token::EOF]);
+        assert_eq!(
+            result,
+            vec![Token::StringLiteral("foo bar".to_owned()), Token::EOF]
+        );
 
         let (_, result) = Lexer::lex_tokens(&b"\"foo\nbar\""[..]).unwrap();
-        assert_eq!(result, vec![Token::StringLiteral("foo\nbar".to_owned()), Token::EOF]);
+        assert_eq!(
+            result,
+            vec![Token::StringLiteral("foo\nbar".to_owned()), Token::EOF]
+        );
 
         let (_, result) = Lexer::lex_tokens(&b"\"foo\tbar\""[..]).unwrap();
-        assert_eq!(result, vec![Token::StringLiteral("foo\tbar".to_owned()), Token::EOF]);
+        assert_eq!(
+            result,
+            vec![Token::StringLiteral("foo\tbar".to_owned()), Token::EOF]
+        );
 
-        let (_, result) = Lexer::lex_tokens(&b"\"foo\\\"bar\""[..])
-            .unwrap();
-        assert_eq!(result, vec![Token::StringLiteral("foo\"bar".to_owned()), Token::EOF]);
+        let (_, result) = Lexer::lex_tokens(&b"\"foo\\\"bar\""[..]).unwrap();
+        assert_eq!(
+            result,
+            vec![Token::StringLiteral("foo\"bar".to_owned()), Token::EOF]
+        );
 
-        let (_, result) = Lexer::lex_tokens(&b"\"foo\\\"bar with \xf0\x9f\x92\x96 emojis\""[..])
-            .unwrap();
-        assert_eq!(result,
-            vec![Token::StringLiteral("foo\"bar with 💖 emojis".to_owned()), Token::EOF]);
+        let (_, result) =
+            Lexer::lex_tokens(&b"\"foo\\\"bar with \xf0\x9f\x92\x96 emojis\""[..]).unwrap();
+        assert_eq!(
+            result,
+            vec![
+                Token::StringLiteral("foo\"bar with 💖 emojis".to_owned()),
+                Token::EOF
+            ]
+        );
     }
 
     #[test]
     fn id_with_numbers() {
-        let (_, result) = Lexer::lex_tokens(&b"hello2 hel301oo120"[..])
-            .unwrap();
+        let (_, result) = Lexer::lex_tokens(&b"hello2 hel301oo120"[..]).unwrap();
         let expected = vec![
             Token::Ident("hello2".to_owned()),
             Token::Ident("hel301oo120".to_owned()),
@@ -469,15 +481,14 @@ mod tests {
             Token::IntLiteral(2),
             Token::RBracket,
             Token::SemiColon,
-            Token::EOF
+            Token::EOF,
         ];
         assert_eq!(result, expected);
     }
 
     #[test]
     fn hash_tokens() {
-        let (_, result) = Lexer::lex_tokens(&b"{\"hello\": \"world\"}"[..])
-            .unwrap();
+        let (_, result) = Lexer::lex_tokens(&b"{\"hello\": \"world\"}"[..]).unwrap();
         let expected = vec![
             Token::LBrace,
             Token::StringLiteral("hello".to_owned()),

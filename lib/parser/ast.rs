@@ -20,14 +20,20 @@ pub enum Expr {
         consequence: BlockStmt,
         alternative: Option<BlockStmt>,
     },
-    FnExpr { params: Vec<Ident>, body: BlockStmt },
+    FnExpr {
+        params: Vec<Ident>,
+        body: BlockStmt,
+    },
     CallExpr {
         function: Box<Expr>,
         arguments: Vec<Expr>,
     },
     ArrayExpr(Vec<Expr>),
     HashExpr(Vec<(Literal, Expr)>),
-    IndexExpr { array: Box<Expr>, index: Box<Expr> },
+    IndexExpr {
+        array: Box<Expr>,
+        index: Box<Expr>,
+    },
 }
 
 #[derive(PartialEq, Debug, Clone)]
