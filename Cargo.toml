@@ -1,7 +1,7 @@
 [package]
 name = "monkey-rust"
-version = "0.3.0"
-authors = ["Jérôme Mahuet <jerome.mahuet@gmail.com>"]
+version = "0.1.0"
+authors = ["exfly <exflyg@gmail.com>"]
 
 [lib]
 name = "monkey_lib"

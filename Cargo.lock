@@ -204,7 +204,7 @@ dependencies = [
 
 [[package]]
 name = "monkey-rust"
-version = "0.3.0"
+version = "0.1.0"
 dependencies = [
  "clap 2.31.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "nom 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
