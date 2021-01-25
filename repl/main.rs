@@ -110,7 +110,7 @@ fn main() -> rustyline::Result<()> {
     }
 
     println!();
-    println!("This is the monkey language repl v0.3.0");
+    println!("This is the monkey language repl v0.4.0");
     println!("Press Ctrl-D or enter \"quit\" to exit.");
     println!();
 

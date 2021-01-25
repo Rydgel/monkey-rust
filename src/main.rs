@@ -27,7 +27,7 @@ fn main() {
         Command::RunInlineCode(code) => Some(code),
         Command::Noop => None,
     };
-
+    
     if code_string.is_some() {
         let code_string = code_string.unwrap();
         let mut evaluator = Evaluator::new();

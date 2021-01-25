@@ -52,9 +52,9 @@ pub struct Tokens<'a> {
 }
 
 impl<'a> Tokens<'a> {
-    pub fn new(vec: &'a Vec<Token>) -> Self {
+    pub fn new(vec: &'a [Token]) -> Self {
         Tokens {
-            tok: vec.as_slice(),
+            tok: vec,
             start: 0,
             end: vec.len(),
         }

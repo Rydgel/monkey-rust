@@ -6,7 +6,7 @@ use std::hash::{Hash, Hasher};
 use parser::ast::*;
 use evaluator::environment::*;
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Object {
     Integer(i64),
     Boolean(bool),
@@ -24,10 +24,7 @@ pub type BuiltinFunction = fn(Vec<Object>) -> Result<Object, String>;
 
 impl Object {
     pub fn is_returned(&self) -> bool {
-        match *self {
-            Object::ReturnValue(_) => true,
-            _ => false,
-        }
+        matches!(*self, Object::ReturnValue(_))
     }
 
     pub fn returned(&self) -> Self {
@@ -52,26 +49,26 @@ impl fmt::Display for Object {
             Object::String(ref s) => write!(f, "{}", s),
             Object::Array(ref v) => {
                 let mut fmt_string = String::new();
-                fmt_string.push_str("[");
+                fmt_string.push('[');
                 for (i, o) in v.iter().enumerate() {
                     fmt_string.push_str(format!("{}", o).as_str());
                     if i < v.len() - 1 {
                         fmt_string.push_str(", ");
                     }
                 }
-                fmt_string.push_str("]");
+                fmt_string.push(']');
                 write!(f, "{}", fmt_string)
             }
             Object::Hash(ref hashmap) => {
                 let mut fmt_string = String::new();
-                fmt_string.push_str("{");
+                fmt_string.push('{');
                 for (i, (k, v)) in hashmap.iter().enumerate() {
                     fmt_string.push_str(format!("{} : {}", k, v).as_str());
                     if i < hashmap.len() - 1 {
                         fmt_string.push_str(", ");
                     }
                 }
-                fmt_string.push_str("}");
+                fmt_string.push('}');
                 write!(f, "{}", fmt_string)
             }
             Object::Function(_, _, _) => write!(f, "[function]"),
@@ -85,6 +82,7 @@ impl fmt::Display for Object {
 
 impl Eq for Object {}
 
+#[allow(clippy::all)]
 impl Hash for Object {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match *self {

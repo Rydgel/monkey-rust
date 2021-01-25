@@ -436,22 +436,22 @@ mod tests {
         compare("!!false".as_bytes(), Object::Boolean(false));
         compare("!!true".as_bytes(), Object::Boolean(true));
 
-        compare("!5".as_bytes(), Object::Error(format!("5 is not a bool")));
-        compare("!1".as_bytes(), Object::Error(format!("1 is not a bool")));
-        compare("!0".as_bytes(), Object::Error(format!("0 is not a bool")));
-        compare("!!1".as_bytes(), Object::Error(format!("1 is not a bool")));
-        compare("!!0".as_bytes(), Object::Error(format!("0 is not a bool")));
+        compare("!5".as_bytes(), Object::Error("5 is not a bool".to_string()));
+        compare("!1".as_bytes(), Object::Error("1 is not a bool".to_string()));
+        compare("!0".as_bytes(), Object::Error("0 is not a bool".to_string()));
+        compare("!!1".as_bytes(), Object::Error("1 is not a bool".to_string()));
+        compare("!!0".as_bytes(), Object::Error("0 is not a bool".to_string()));
         // the prefix +
         compare("+1".as_bytes(), Object::Integer(1));
         compare("+5".as_bytes(), Object::Integer(5));
         compare("+20".as_bytes(), Object::Integer(20));
         compare(
             "+true".as_bytes(),
-            Object::Error(format!("true is not an integer")),
+            Object::Error("true is not an integer".to_string()),
         );
         compare(
             "+false".as_bytes(),
-            Object::Error(format!("false is not an integer")),
+            Object::Error("false is not an integer".to_string()),
         );
         // the prefix -
         compare("-1".as_bytes(), Object::Integer(-1));
@@ -459,11 +459,11 @@ mod tests {
         compare("-20".as_bytes(), Object::Integer(-20));
         compare(
             "-true".as_bytes(),
-            Object::Error(format!("true is not an integer")),
+            Object::Error("true is not an integer".to_string()),
         );
         compare(
             "-false".as_bytes(),
-            Object::Error(format!("false is not an integer")),
+            Object::Error("false is not an integer".to_string()),
         );
     }
 
@@ -510,7 +510,7 @@ mod tests {
         compare("if (false) { 10 }".as_bytes(), Object::Null);
         compare(
             "if (1) { 10 }".as_bytes(),
-            Object::Error(format!("1 is not a bool")),
+            Object::Error("1 is not a bool".to_string()),
         );
         compare("if (1 < 2) { 10 }".as_bytes(), Object::Integer(10));
         compare("if (1 > 2) { 10 }".as_bytes(), Object::Null);
@@ -553,7 +553,7 @@ mod tests {
         );
         compare(
             "foobar".as_bytes(),
-            Object::Error(format!("identifier not found: foobar")),
+            Object::Error("identifier not found: foobar".to_string()),
         );
     }
 
@@ -573,7 +573,7 @@ mod tests {
         );
         compare(
             "\"foo\" - \"bar\"".as_bytes(),
-            Object::Error(format!("foo is not an integer")),
+            Object::Error("foo is not an integer".to_string()),
         );
     }
 
@@ -602,15 +602,15 @@ mod tests {
         compare("fn(x) { x; }(5)".as_bytes(), Object::Integer(5));
         compare(
             "5();".as_bytes(),
-            Object::Error(format!("5 is not a valid function")),
+            Object::Error("5 is not a valid function".to_string()),
         );
         compare(
             "false();".as_bytes(),
-            Object::Error(format!("false is not a valid function")),
+            Object::Error("false is not a valid function".to_string()),
         );
         compare(
             "let add = fn(x, y) { x + y; }; add(1);".as_bytes(),
-            Object::Error(format!("wrong number of arguments: 2 expected but 1 given")),
+            Object::Error("wrong number of arguments: 2 expected but 1 given".to_string()),
         );
         compare(
             "let a = 10; let x = fn () { a; }; x();".as_bytes(),
@@ -763,11 +763,11 @@ mod tests {
         );
         compare(
             (input_beg.clone() + &"h[[]]".to_string()).as_bytes(),
-            Object::Error(format!("[] is not hashable")),
+            Object::Error("[] is not hashable".to_string()),
         );
         compare(
-            (input_beg.clone() + &"3[true];".to_string()).as_bytes(),
-            Object::Error(format!("unexpected index target: 3")),
+            (input_beg + &"3[true];".to_string()).as_bytes(),
+            Object::Error("unexpected index target: 3".to_string()),
         );
     }
 
@@ -782,18 +782,18 @@ mod tests {
         );
         compare(
             "len(3)".as_bytes(),
-            Object::Error(format!("invalid arguments for len")),
+            Object::Error("invalid arguments for len".to_string()),
         );
         compare(
             "len(\"hello\", \"world\")".as_bytes(),
-            Object::Error(format!("wrong number of arguments: 1 expected but 2 given")),
+            Object::Error("wrong number of arguments: 1 expected but 2 given".to_string()),
         );
         compare("len([])".as_bytes(), Object::Integer(0));
         compare("len([1, 2, 3, 4])".as_bytes(), Object::Integer(4));
         // head
         compare("head([1])".as_bytes(), Object::Integer(1));
         compare("head([1, 2, 3, 4])".as_bytes(), Object::Integer(1));
-        compare("head([])".as_bytes(), Object::Error(format!("empty array")));
+        compare("head([])".as_bytes(), Object::Error("empty array".to_string()));
         // tail
         compare("tail([1])".as_bytes(), Object::Array(vec![]));
         compare(
@@ -804,7 +804,7 @@ mod tests {
                 Object::Integer(4),
             ]),
         );
-        compare("tail([])".as_bytes(), Object::Error(format!("empty array")));
+        compare("tail([])".as_bytes(), Object::Error("empty array".to_string()));
         // cons
         compare(
             "cons(1, [])".as_bytes(),
@@ -843,7 +843,7 @@ mod tests {
             .to_string();
 
         compare(
-            (map_decl + &"let double = fn(x) { x * 2 }; map(double, [1, 2, 3, 4])").as_bytes(),
+            (map_decl + "let double = fn(x) { x * 2 }; map(double, [1, 2, 3, 4])").as_bytes(),
             Object::Array(vec![
                 Object::Integer(2),
                 Object::Integer(4),
@@ -853,7 +853,7 @@ mod tests {
         );
 
         compare(
-            (reduce_decl + &"let add = fn(x, y) { x + y }; reduce(add, 0, [1, 2, 3, 4, 5])")
+            (reduce_decl + "let add = fn(x, y) { x + y }; reduce(add, 0, [1, 2, 3, 4, 5])")
                 .as_bytes(),
             Object::Integer(15),
         );

@@ -34,7 +34,7 @@ fn add_builtin(name: &str, param_num: usize, func: BuiltinFunction) -> (Ident, O
 }
 
 fn bprint_fn(args: Vec<Object>) -> Result<Object, String> {
-    match args.iter().next() {
+    match args.get(0) {
         Some(&Object::String(ref t)) => {
             println!("{}", t);
             Ok(Object::Null)
@@ -48,7 +48,7 @@ fn bprint_fn(args: Vec<Object>) -> Result<Object, String> {
 }
 
 fn blen_fn(args: Vec<Object>) -> Result<Object, String> {
-    match args.iter().next() {
+    match args.get(0) {
         Some(&Object::String(ref s)) => Ok(Object::Integer(s.len() as i64)),
         Some(&Object::Array(ref arr)) => Ok(Object::Integer(arr.len() as i64)),
         _ => Err(String::from("invalid arguments for len")),
@@ -56,7 +56,7 @@ fn blen_fn(args: Vec<Object>) -> Result<Object, String> {
 }
 
 fn bhead_fn(args: Vec<Object>) -> Result<Object, String> {
-    match args.iter().next() {
+    match args.get(0) {
         Some(&Object::Array(ref arr)) => {
             match arr.first() {
                 None => Err(String::from("empty array")),
@@ -68,7 +68,7 @@ fn bhead_fn(args: Vec<Object>) -> Result<Object, String> {
 }
 
 fn btail_fn(args: Vec<Object>) -> Result<Object, String> {
-    match args.iter().next() {
+    match args.get(0) {
         Some(&Object::Array(ref arr)) => {
             match arr.len() {
                 0 => Err(String::from("empty array")),
@@ -86,8 +86,7 @@ fn bcons_fn(args: Vec<Object>) -> Result<Object, String> {
     let mut args = args.iter();
     match (args.next(), args.next()) {
         (Some(o), Some(&Object::Array(ref os))) => {
-            let mut vectors = vec![];
-            vectors.push(o.clone());
+            let mut vectors = vec![o.clone()];
             for object in os {
                 vectors.push(object.clone());
             }
