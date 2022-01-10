@@ -1,6 +1,7 @@
 use nom::*;
-use std::ops::{Range, RangeTo, RangeFrom, RangeFull};
+use std::borrow::Borrow;
 use std::iter::Enumerate;
+use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Token {
@@ -65,13 +66,6 @@ impl<'a> InputLength for Tokens<'a> {
     #[inline]
     fn input_len(&self) -> usize {
         self.tok.len()
-    }
-}
-
-impl<'a> AtEof for Tokens<'a> {
-    #[inline]
-    fn at_eof(&self) -> bool {
-        true
     }
 }
 
@@ -147,7 +141,6 @@ impl<'a> Slice<RangeFull> for Tokens<'a> {
 
 impl<'a> InputIter for Tokens<'a> {
     type Item = &'a Token;
-    type RawItem = Token;
     type Iter = Enumerate<::std::slice::Iter<'a, Token>>;
     type IterElem = ::std::slice::Iter<'a, Token>;
 
@@ -162,16 +155,16 @@ impl<'a> InputIter for Tokens<'a> {
     #[inline]
     fn position<P>(&self, predicate: P) -> Option<usize>
     where
-        P: Fn(Self::RawItem) -> bool,
+        P: Fn(Self::Item) -> bool,
     {
-        self.tok.iter().position(|b| predicate(b.clone()))
+        self.tok.iter().position(|b| predicate(b))
     }
     #[inline]
-    fn slice_index(&self, count: usize) -> Option<usize> {
+    fn slice_index(&self, count: usize) -> Result<usize, Needed> {
         if self.tok.len() >= count {
-            Some(count)
+            Ok(count)
         } else {
-            None
+            Err(Needed::Unknown)
         }
     }
 }
