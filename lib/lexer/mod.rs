@@ -1,5 +1,11 @@
+use nom::branch::*;
+use nom::bytes::complete::{tag, take};
+use nom::character::complete::{alpha1, alphanumeric1, digit1, multispace0};
+use nom::combinator::{map, map_res, recognize};
+use nom::multi::many0;
+use nom::sequence::{delimited, pair};
 use nom::*;
-use nom::types::*;
+
 use std::str;
 use std::str::FromStr;
 use std::str::Utf8Error;
@@ -7,135 +13,82 @@ use std::str::Utf8Error;
 pub mod token;
 use lexer::token::*;
 
+macro_rules! syntax {
+    ($func_name: ident, $tag_string: literal, $output_token: expr) => {
+        fn $func_name<'a>(s: &'a [u8]) -> IResult<&[u8], Token> {
+            map(tag($tag_string), |_| $output_token)(s)
+        }
+    };
+}
 
 // operators
-named!(equal_operator<CompleteByteSlice, Token>,
-  do_parse!(tag!("==") >> (Token::Equal))
-);
+syntax! {equal_operator, "==", Token::Equal}
+syntax! {not_equal_operator, "!=", Token::NotEqual}
+syntax! {assign_operator, "=", Token::Assign}
+syntax! {plus_operator, "+", Token::Plus}
+syntax! {minus_operator, "-", Token::Minus}
+syntax! {multiply_operator, "*", Token::Multiply}
+syntax! {divide_operator, "/", Token::Divide}
+syntax! {not_operator, "!", Token::Not}
+syntax! {greater_operator_equal, ">=", Token::GreaterThanEqual}
+syntax! {lesser_operator_equal, "<=", Token::LessThanEqual}
+syntax! {greater_operator, ">", Token::GreaterThan}
+syntax! {lesser_operator, "<", Token::LessThan}
 
-named!(not_equal_operator<CompleteByteSlice, Token>,
-  do_parse!(tag!("!=") >> (Token::NotEqual))
-);
-
-named!(assign_operator<CompleteByteSlice, Token>,
-  do_parse!(tag!("=") >> (Token::Assign))
-);
-
-named!(plus_operator<CompleteByteSlice, Token>,
-  do_parse!(tag!("+") >> (Token::Plus))
-);
-
-named!(minus_operator<CompleteByteSlice, Token>,
-  do_parse!(tag!("-") >> (Token::Minus))
-);
-
-named!(multiply_operator<CompleteByteSlice, Token>,
-  do_parse!(tag!("*") >> (Token::Multiply))
-);
-
-named!(divide_operator<CompleteByteSlice, Token>,
-  do_parse!(tag!("/") >> (Token::Divide))
-);
-
-named!(not_operator<CompleteByteSlice, Token>,
-  do_parse!(tag!("!") >> (Token::Not))
-);
-
-named!(greater_operator_equal<CompleteByteSlice, Token>,
-  do_parse!(tag!(">=") >> (Token::GreaterThanEqual))
-);
-
-named!(lesser_operator_equal<CompleteByteSlice, Token>,
-  do_parse!(tag!("<=") >> (Token::LessThanEqual))
-);
-
-named!(greater_operator<CompleteByteSlice, Token>,
-  do_parse!(tag!(">") >> (Token::GreaterThan))
-);
-
-named!(lesser_operator<CompleteByteSlice, Token>,
-  do_parse!(tag!("<") >> (Token::LessThan))
-);
-
-named!(lex_operator<CompleteByteSlice, Token>, alt!(
-    equal_operator |
-    not_equal_operator |
-    assign_operator |
-    plus_operator |
-    minus_operator |
-    multiply_operator |
-    divide_operator |
-    not_operator |
-    greater_operator_equal |
-    lesser_operator_equal |
-    greater_operator |
-    lesser_operator
-));
-
+pub fn lex_operator<'a>(input: &'a [u8]) -> IResult<&[u8], Token> {
+    alt((
+        equal_operator,
+        not_equal_operator,
+        assign_operator,
+        plus_operator,
+        minus_operator,
+        multiply_operator,
+        divide_operator,
+        not_operator,
+        greater_operator_equal,
+        lesser_operator_equal,
+        greater_operator,
+        lesser_operator,
+    ))(input)
+}
 
 // punctuations
-named!(comma_punctuation<CompleteByteSlice, Token>,
-  do_parse!(tag!(",") >> (Token::Comma))
-);
+syntax! {comma_punctuation, ",", Token::Comma}
+syntax! {semicolon_punctuation, ";", Token::SemiColon}
+syntax! {colon_punctuation, ":", Token::Colon}
+syntax! {lparen_punctuation, "(", Token::LParen}
+syntax! {rparen_punctuation, ")", Token::RParen}
+syntax! {lbrace_punctuation, "{", Token::LBrace}
+syntax! {rbrace_punctuation, "}", Token::RBrace}
+syntax! {lbracket_punctuation, "[", Token::LBracket}
+syntax! {rbracket_punctuation, "]", Token::RBracket}
 
-named!(semicolon_punctuation<CompleteByteSlice, Token>,
-  do_parse!(tag!(";") >> (Token::SemiColon))
-);
-
-named!(colon_punctuation<CompleteByteSlice, Token>,
-  do_parse!(tag!(":") >> (Token::Colon))
-);
-
-named!(lparen_punctuation<CompleteByteSlice, Token>,
-  do_parse!(tag!("(") >> (Token::LParen))
-);
-
-named!(rparen_punctuation<CompleteByteSlice, Token>,
-  do_parse!(tag!(")") >> (Token::RParen))
-);
-
-named!(lbrace_punctuation<CompleteByteSlice, Token>,
-  do_parse!(tag!("{") >> (Token::LBrace))
-);
-
-named!(rbrace_punctuation<CompleteByteSlice, Token>,
-  do_parse!(tag!("}") >> (Token::RBrace))
-);
-
-named!(lbracket_punctuation<CompleteByteSlice, Token>,
-  do_parse!(tag!("[") >> (Token::LBracket))
-);
-
-named!(rbracket_punctuation<CompleteByteSlice, Token>,
-  do_parse!(tag!("]") >> (Token::RBracket))
-);
-
-named!(lex_punctuations<CompleteByteSlice, Token>, alt!(
-    comma_punctuation |
-    semicolon_punctuation |
-    colon_punctuation |
-    lparen_punctuation |
-    rparen_punctuation |
-    lbrace_punctuation |
-    rbrace_punctuation |
-    lbracket_punctuation |
-    rbracket_punctuation
-));
+pub fn lex_punctuations<'a>(input: &'a [u8]) -> IResult<&[u8], Token> {
+    alt((
+        comma_punctuation,
+        semicolon_punctuation,
+        colon_punctuation,
+        lparen_punctuation,
+        rparen_punctuation,
+        lbrace_punctuation,
+        rbrace_punctuation,
+        lbracket_punctuation,
+        rbracket_punctuation,
+    ))(input)
+}
 
 // Strings
-fn pis(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Vec<u8>> {
+fn pis<'a>(input: &'a [u8]) -> IResult<&[u8], Vec<u8>> {
     use std::result::Result::*;
 
-    let (i1, c1) = try_parse!(input, take!(1));
+    let (i1, c1) = take(1usize)(input)?;
     match c1.as_bytes() {
         b"\"" => Ok((input, vec![])),
         b"\\" => {
-            let (i2, c2) = try_parse!(i1, take!(1));
-            pis(i2).map(|(slice, done)| (slice, concat_slice_vec(c2.0, done)))
+            let (i2, c2) = take(1usize)(i1)?;
+            pis(i2).map(|(slice, done)| (slice, concat_slice_vec(c2, done)))
         }
-        c => {
-            pis(i1).map(|(slice, done)| (slice, concat_slice_vec(c, done)))
-        },
+        c => pis(i1).map(|(slice, done)| (slice, concat_slice_vec(c, done))),
     }
 }
 
@@ -149,116 +102,81 @@ fn convert_vec_utf8(v: Vec<u8>) -> Result<String, Utf8Error> {
     let slice = v.as_slice();
     str::from_utf8(slice).map(|s| s.to_owned())
 }
+fn complete_byte_slice_str_from_utf8(c: &[u8]) -> Result<&str, Utf8Error> {
+    str::from_utf8(c)
+}
+fn string<'a>(input: &'a [u8]) -> IResult<&[u8], String> {
+    delimited(tag("\""), map_res(pis, convert_vec_utf8), tag("\""))(input)
+}
 
-named!(string<CompleteByteSlice, String>,
-  delimited!(
-    tag!("\""),
-    map_res!(pis, convert_vec_utf8),
-    tag!("\"")
-  )
-);
-
-named!(lex_string<CompleteByteSlice, Token>,
-    do_parse!(
-        s: string >>
-        (Token::StringLiteral(s))
-    )
-);
-
-macro_rules! check(
-  ($input:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      use std::result::Result::*;
-      use nom::{Err,ErrorKind};
-
-      let mut failed = false;
-      for &idx in $input.0 {
-        if !$submac!(idx, $($args)*) {
-            failed = true;
-            break;
-        }
-      }
-      if failed {
-        let e: ErrorKind<u32> = ErrorKind::Tag;
-        Err(Err::Error(error_position!($input, e)))
-      } else {
-        Ok((&b""[..], $input))
-      }
-    }
-  );
-  ($input:expr, $f:expr) => (
-    check!($input, call!($f));
-  );
-);
+fn lex_string<'a>(input: &'a [u8]) -> IResult<&[u8], Token> {
+    map(string, |s| Token::StringLiteral(s))(input)
+}
 
 // Reserved or ident
-fn parse_reserved(c: CompleteStr, rest: Option<CompleteStr>) -> Token {
-    let mut string = c.0.to_owned();
-    string.push_str(rest.unwrap_or(CompleteStr("")).0);
-    match string.as_ref() {
-        "let" => Token::Let,
-        "fn" => Token::Function,
-        "if" => Token::If,
-        "else" => Token::Else,
-        "return" => Token::Return,
-        "true" => Token::BoolLiteral(true),
-        "false" => Token::BoolLiteral(false),
-        _ => Token::Ident(string),
-    }
+fn lex_reserved_ident<'a>(input: &'a [u8]) -> IResult<&[u8], Token> {
+    map_res(
+        recognize(pair(
+            alt((alpha1, tag("_"))),
+            many0(alt((alphanumeric1, tag("_")))),
+        )),
+        |s| {
+            let c = complete_byte_slice_str_from_utf8(s);
+            c.map(|syntax| match syntax {
+                "let" => Token::Let,
+                "fn" => Token::Function,
+                "if" => Token::If,
+                "else" => Token::Else,
+                "return" => Token::Return,
+                "true" => Token::BoolLiteral(true),
+                "false" => Token::BoolLiteral(false),
+                _ => Token::Ident(syntax.to_string()),
+            })
+        },
+    )(input)
 }
 
-fn complete_byte_slice_str_from_utf8(c: CompleteByteSlice) -> Result<CompleteStr, Utf8Error> {
-    str::from_utf8(c.0).map(|s| CompleteStr(s))
-}
-
-named!(take_1_char<CompleteByteSlice, CompleteByteSlice>,
-    flat_map!(take!(1), check!(is_alphabetic))
-);
-
-named!(lex_reserved_ident<CompleteByteSlice, Token>,
-    do_parse!(
-        c: map_res!(call!(take_1_char), complete_byte_slice_str_from_utf8) >>
-        rest: opt!(complete!(map_res!(alphanumeric, complete_byte_slice_str_from_utf8))) >>
-        (parse_reserved(c, rest))
-    )
-);
-
-fn complete_str_from_str<F: FromStr>(c: CompleteStr) -> Result<F, F::Err> {
-    FromStr::from_str(c.0)
+fn complete_str_from_str<F: FromStr>(c: &str) -> Result<F, F::Err> {
+    FromStr::from_str(c)
 }
 
 // Integers parsing
-named!(lex_integer<CompleteByteSlice, Token>,
-    do_parse!(
-        i: map_res!(map_res!(digit, complete_byte_slice_str_from_utf8), complete_str_from_str) >>
-        (Token::IntLiteral(i))
-    )
-);
+fn lex_integer<'a>(input: &'a [u8]) -> IResult<&[u8], Token> {
+    map(
+        map_res(
+            map_res(digit1, complete_byte_slice_str_from_utf8),
+            complete_str_from_str,
+        ),
+        |i| Token::IntLiteral(i),
+    )(input)
+}
 
 // Illegal tokens
-named!(lex_illegal<CompleteByteSlice, Token>,
-    do_parse!(take!(1) >> (Token::Illegal))
-);
+fn lex_illegal<'a>(input: &'a [u8]) -> IResult<&[u8], Token> {
+    map(take(1usize), |_| Token::Illegal)(input)
+}
 
-named!(lex_token<CompleteByteSlice, Token>, alt_complete!(
-    lex_operator |
-    lex_punctuations |
-    lex_string |
-    lex_reserved_ident |
-    lex_integer |
-    lex_illegal
-));
+fn lex_token<'a>(input: &'a [u8]) -> IResult<&[u8], Token> {
+    alt((
+        lex_operator,
+        lex_punctuations,
+        lex_string,
+        lex_reserved_ident,
+        lex_integer,
+        lex_illegal,
+    ))(input)
+}
 
-named!(lex_tokens<CompleteByteSlice, Vec<Token>>, ws!(many0!(lex_token)));
-
+fn lex_tokens<'a>(input: &'a [u8]) -> IResult<&[u8], Vec<Token>> {
+    many0(delimited(multispace0, lex_token, multispace0))(input)
+}
 
 pub struct Lexer;
 
 impl Lexer {
-    pub fn lex_tokens(bytes: &[u8]) -> IResult<CompleteByteSlice, Vec<Token>> {
-        lex_tokens(CompleteByteSlice(bytes)).map(|(slice, result)|
-            (slice, [&result[..], &vec![Token::EOF][..]].concat())
-        )
+    pub fn lex_tokens(bytes: &[u8]) -> IResult<&[u8], Vec<Token>> {
+        lex_tokens(bytes)
+            .map(|(slice, result)| (slice, [&result[..], &vec![Token::EOF][..]].concat()))
     }
 }
 
@@ -356,7 +274,7 @@ mod tests {
             }\
             return false;\
             "
-            .as_bytes();
+        .as_bytes();
 
         let (_, result) = Lexer::lex_tokens(input).unwrap();
 
@@ -426,31 +344,49 @@ mod tests {
     #[test]
     fn string_literals() {
         let (_, result) = Lexer::lex_tokens(&b"\"foobar\""[..]).unwrap();
-        assert_eq!(result, vec![Token::StringLiteral("foobar".to_owned()), Token::EOF]);
+        assert_eq!(
+            result,
+            vec![Token::StringLiteral("foobar".to_owned()), Token::EOF]
+        );
 
         let (_, result) = Lexer::lex_tokens(&b"\"foo bar\""[..]).unwrap();
-        assert_eq!(result, vec![Token::StringLiteral("foo bar".to_owned()), Token::EOF]);
+        assert_eq!(
+            result,
+            vec![Token::StringLiteral("foo bar".to_owned()), Token::EOF]
+        );
 
         let (_, result) = Lexer::lex_tokens(&b"\"foo\nbar\""[..]).unwrap();
-        assert_eq!(result, vec![Token::StringLiteral("foo\nbar".to_owned()), Token::EOF]);
+        assert_eq!(
+            result,
+            vec![Token::StringLiteral("foo\nbar".to_owned()), Token::EOF]
+        );
 
         let (_, result) = Lexer::lex_tokens(&b"\"foo\tbar\""[..]).unwrap();
-        assert_eq!(result, vec![Token::StringLiteral("foo\tbar".to_owned()), Token::EOF]);
+        assert_eq!(
+            result,
+            vec![Token::StringLiteral("foo\tbar".to_owned()), Token::EOF]
+        );
 
-        let (_, result) = Lexer::lex_tokens(&b"\"foo\\\"bar\""[..])
-            .unwrap();
-        assert_eq!(result, vec![Token::StringLiteral("foo\"bar".to_owned()), Token::EOF]);
+        let (_, result) = Lexer::lex_tokens(&b"\"foo\\\"bar\""[..]).unwrap();
+        assert_eq!(
+            result,
+            vec![Token::StringLiteral("foo\"bar".to_owned()), Token::EOF]
+        );
 
-        let (_, result) = Lexer::lex_tokens(&b"\"foo\\\"bar with \xf0\x9f\x92\x96 emojis\""[..])
-            .unwrap();
-        assert_eq!(result,
-            vec![Token::StringLiteral("foo\"bar with 💖 emojis".to_owned()), Token::EOF]);
+        let (_, result) =
+            Lexer::lex_tokens(&b"\"foo\\\"bar with \xf0\x9f\x92\x96 emojis\""[..]).unwrap();
+        assert_eq!(
+            result,
+            vec![
+                Token::StringLiteral("foo\"bar with 💖 emojis".to_owned()),
+                Token::EOF
+            ]
+        );
     }
 
     #[test]
     fn id_with_numbers() {
-        let (_, result) = Lexer::lex_tokens(&b"hello2 hel301oo120"[..])
-            .unwrap();
+        let (_, result) = Lexer::lex_tokens(&b"hello2 hel301oo120"[..]).unwrap();
         let expected = vec![
             Token::Ident("hello2".to_owned()),
             Token::Ident("hel301oo120".to_owned()),
@@ -469,15 +405,14 @@ mod tests {
             Token::IntLiteral(2),
             Token::RBracket,
             Token::SemiColon,
-            Token::EOF
+            Token::EOF,
         ];
         assert_eq!(result, expected);
     }
 
     #[test]
     fn hash_tokens() {
-        let (_, result) = Lexer::lex_tokens(&b"{\"hello\": \"world\"}"[..])
-            .unwrap();
+        let (_, result) = Lexer::lex_tokens(&b"{\"hello\": \"world\"}"[..]).unwrap();
         let expected = vec![
             Token::LBrace,
             Token::StringLiteral("hello".to_owned()),

@@ -7,7 +7,7 @@ use monkey_lib::evaluator::*;
 use monkey_lib::lexer::token::*;
 use monkey_lib::lexer::*;
 use monkey_lib::parser::*;
-use nom::*;
+use nom::Err;
 use rustyline::completion::{Completer, FilenameCompleter, Pair};
 use rustyline::config::OutputStreamType;
 use rustyline::error::ReadlineError;

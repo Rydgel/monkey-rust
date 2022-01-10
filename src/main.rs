@@ -3,13 +3,13 @@ extern crate monkey_lib;
 extern crate clap;
 extern crate nom;
 
+use monkey_lib::evaluator::*;
+use monkey_lib::lexer::token::*;
+use monkey_lib::lexer::*;
+use monkey_lib::parser::*;
+use nom::Err;
 use std::fs::File;
 use std::io::prelude::*;
-use nom::*;
-use monkey_lib::lexer::*;
-use monkey_lib::lexer::token::*;
-use monkey_lib::parser::*;
-use monkey_lib::evaluator::*;
 
 use cmd::*;
 mod cmd;
@@ -27,7 +27,7 @@ fn main() {
         Command::RunInlineCode(code) => Some(code),
         Command::Noop => None,
     };
-    
+
     if code_string.is_some() {
         let code_string = code_string.unwrap();
         let mut evaluator = Evaluator::new();
