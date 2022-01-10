@@ -4,12 +4,11 @@ pub mod ast;
 use lexer::token::*;
 use nom::branch::*;
 use nom::bytes::complete::take;
-use nom::combinator::{map, map_res, opt, recognize, verify};
+use nom::combinator::{map, opt, verify};
 use nom::error::{Error, ErrorKind};
 use nom::multi::many0;
 use nom::sequence::*;
 use nom::Err;
-use parser::ast::Literal::*;
 use parser::ast::*;
 use std::result::Result::*;
 
@@ -20,7 +19,7 @@ macro_rules! tag_token (
         }
     )
   );
-fn parse_literal<'a>(input: Tokens) -> IResult<Tokens, Literal> {
+fn parse_literal(input: Tokens) -> IResult<Tokens, Literal> {
     let (i1, t1) = take(1usize)(input)?;
     if t1.tok.is_empty() {
         Err(Err::Error(Error::new(input, ErrorKind::Tag)))
@@ -33,7 +32,7 @@ fn parse_literal<'a>(input: Tokens) -> IResult<Tokens, Literal> {
         }
     }
 }
-fn parse_ident<'a>(input: Tokens) -> IResult<Tokens, Ident> {
+fn parse_ident(input: Tokens) -> IResult<Tokens, Ident> {
     let (i1, t1) = take(1usize)(input)?;
     if t1.tok.is_empty() {
         Err(Err::Error(Error::new(input, ErrorKind::Tag)))
@@ -82,19 +81,19 @@ fn infix_op(t: &Token) -> (Precedence, Option<Infix>) {
     }
 }
 
-fn parse_program<'a>(input: Tokens) -> IResult<Tokens, Program> {
+fn parse_program(input: Tokens) -> IResult<Tokens, Program> {
     terminated(many0(parse_stmt), eof_tag)(input)
 }
 
-fn parse_expr<'a>(input: Tokens) -> IResult<Tokens, Expr> {
+fn parse_expr(input: Tokens) -> IResult<Tokens, Expr> {
     parse_pratt_expr(input, Precedence::PLowest)
 }
 
-fn parse_stmt<'a>(input: Tokens) -> IResult<Tokens, Stmt> {
+fn parse_stmt(input: Tokens) -> IResult<Tokens, Stmt> {
     alt((parse_let_stmt, parse_return_stmt, parse_expr_stmt))(input)
 }
 
-fn parse_let_stmt<'a>(input: Tokens) -> IResult<Tokens, Stmt> {
+fn parse_let_stmt(input: Tokens) -> IResult<Tokens, Stmt> {
     map(
         tuple((
             let_tag,
@@ -107,24 +106,24 @@ fn parse_let_stmt<'a>(input: Tokens) -> IResult<Tokens, Stmt> {
     )(input)
 }
 
-fn parse_return_stmt<'a>(input: Tokens) -> IResult<Tokens, Stmt> {
+fn parse_return_stmt(input: Tokens) -> IResult<Tokens, Stmt> {
     map(
         delimited(return_tag, parse_expr, opt(semicolon_tag)),
-        |expr| Stmt::ReturnStmt(expr),
+        Stmt::ReturnStmt,
     )(input)
 }
 
-fn parse_expr_stmt<'a>(input: Tokens) -> IResult<Tokens, Stmt> {
+fn parse_expr_stmt(input: Tokens) -> IResult<Tokens, Stmt> {
     map(terminated(parse_expr, opt(semicolon_tag)), |expr| {
         Stmt::ExprStmt(expr)
     })(input)
 }
 
-fn parse_block_stmt<'a>(input: Tokens) -> IResult<Tokens, BlockStmt> {
+fn parse_block_stmt(input: Tokens) -> IResult<Tokens, Program> {
     delimited(lbrace_tag, many0(parse_stmt), rbrace_tag)(input)
 }
 
-fn parse_atom_expr<'a>(input: Tokens) -> IResult<Tokens, Expr> {
+fn parse_atom_expr(input: Tokens) -> IResult<Tokens, Expr> {
     alt((
         parse_lit_expr,
         parse_ident_expr,
@@ -137,58 +136,58 @@ fn parse_atom_expr<'a>(input: Tokens) -> IResult<Tokens, Expr> {
     ))(input)
 }
 
-fn parse_paren_expr<'a>(input: Tokens) -> IResult<Tokens, Expr> {
+fn parse_paren_expr(input: Tokens) -> IResult<Tokens, Expr> {
     delimited(lparen_tag, parse_expr, rparen_tag)(input)
 }
 
-fn parse_lit_expr<'a>(input: Tokens) -> IResult<Tokens, Expr> {
-    map(parse_literal, |l| Expr::LitExpr(l))(input)
+fn parse_lit_expr(input: Tokens) -> IResult<Tokens, Expr> {
+    map(parse_literal, Expr::LitExpr)(input)
 }
-fn parse_ident_expr<'a>(input: Tokens) -> IResult<Tokens, Expr> {
-    map(parse_ident, |i| Expr::IdentExpr(i))(input)
+fn parse_ident_expr(input: Tokens) -> IResult<Tokens, Expr> {
+    map(parse_ident, Expr::IdentExpr)(input)
 }
-fn parse_comma_exprs<'a>(input: Tokens) -> IResult<Tokens, Expr> {
+fn parse_comma_exprs(input: Tokens) -> IResult<Tokens, Expr> {
     preceded(comma_tag, parse_expr)(input)
 }
-fn parse_exprs<'a>(input: Tokens) -> IResult<Tokens, Vec<Expr>> {
+fn parse_exprs(input: Tokens) -> IResult<Tokens, Vec<Expr>> {
     map(
         pair(parse_expr, many0(parse_comma_exprs)),
         |(first, second)| [&vec![first][..], &second[..]].concat(),
     )(input)
 }
-fn empty_boxed_vec<'a>(input: Tokens) -> IResult<Tokens, Vec<Expr>> {
+fn empty_boxed_vec(input: Tokens) -> IResult<Tokens, Vec<Expr>> {
     Ok((input, vec![]))
 }
-fn parse_array_expr<'a>(input: Tokens) -> IResult<Tokens, Expr> {
+fn parse_array_expr(input: Tokens) -> IResult<Tokens, Expr> {
     map(
         delimited(
             lbracket_tag,
             alt((parse_exprs, empty_boxed_vec)),
             rbracket_tag,
         ),
-        |v| Expr::ArrayExpr(v),
+        Expr::ArrayExpr,
     )(input)
 }
-fn parse_hash_pair<'a>(input: Tokens) -> IResult<Tokens, (Literal, Expr)> {
+fn parse_hash_pair(input: Tokens) -> IResult<Tokens, (Literal, Expr)> {
     separated_pair(parse_literal, colon_tag, parse_expr)(input)
 }
-fn parse_hash_comma_expr<'a>(input: Tokens) -> IResult<Tokens, (Literal, Expr)> {
+fn parse_hash_comma_expr(input: Tokens) -> IResult<Tokens, (Literal, Expr)> {
     preceded(comma_tag, parse_hash_pair)(input)
 }
 
-fn parse_hash_pairs<'a>(input: Tokens) -> IResult<Tokens, Vec<(Literal, Expr)>> {
+fn parse_hash_pairs(input: Tokens) -> IResult<Tokens, Vec<(Literal, Expr)>> {
     map(
         pair(parse_hash_pair, many0(parse_hash_comma_expr)),
         |(first, second)| [&vec![first][..], &second[..]].concat(),
     )(input)
 }
-fn empty_pairs<'a>(input: Tokens) -> IResult<Tokens, Vec<(Literal, Expr)>> {
+fn empty_pairs(input: Tokens) -> IResult<Tokens, Vec<(Literal, Expr)>> {
     Ok((input, vec![]))
 }
-fn parse_hash_expr<'a>(input: Tokens) -> IResult<Tokens, Expr> {
+fn parse_hash_expr(input: Tokens) -> IResult<Tokens, Expr> {
     map(
         delimited(lbrace_tag, alt((parse_hash_pairs, empty_pairs)), rbrace_tag),
-        |h| Expr::HashExpr(h),
+        Expr::HashExpr,
     )(input)
 }
 
@@ -291,7 +290,7 @@ fn parse_if_expr(input: Tokens) -> IResult<Tokens, Expr> {
         },
     )(input)
 }
-fn parse_else_expr(input: Tokens) -> IResult<Tokens, Option<BlockStmt>> {
+fn parse_else_expr(input: Tokens) -> IResult<Tokens, Option<Program>> {
     opt(preceded(else_tag, parse_block_stmt))(input)
 }
 fn empty_params(input: Tokens) -> IResult<Tokens, Vec<Ident>> {

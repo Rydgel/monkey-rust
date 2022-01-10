@@ -1,9 +1,9 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-use std::collections::HashMap;
-use evaluator::object::*;
 use evaluator::builtins::*;
+use evaluator::object::*;
 use parser::ast::*;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Environment {
@@ -52,15 +52,13 @@ impl Environment {
     pub fn get(&self, name: &str) -> Option<Object> {
         match self.store.get(name) {
             Some(o) => Some(o.clone()),
-            None => {
-                match self.parent {
-                    Some(ref parent_env) => {
-                        let env = parent_env.borrow();
-                        env.get(name)
-                    }
-                    None => None,
+            None => match self.parent {
+                Some(ref parent_env) => {
+                    let env = parent_env.borrow();
+                    env.get(name)
                 }
-            }
+                None => None,
+            },
         }
     }
 }

@@ -23,13 +23,12 @@ fn read_file(file_path: String) -> Result<String, ::std::io::Error> {
 
 fn main() {
     let code_string = match cmd::read_command() {
-        Command::FileReadCommand(file_path) => read_file(file_path).ok(),
+        Command::FileRead(file_path) => read_file(file_path).ok(),
         Command::RunInlineCode(code) => Some(code),
         Command::Noop => None,
     };
 
-    if code_string.is_some() {
-        let code_string = code_string.unwrap();
+    if let Some(code_string) = code_string {
         let mut evaluator = Evaluator::new();
         let lex_tokens = Lexer::lex_tokens(code_string.as_bytes());
         match lex_tokens {

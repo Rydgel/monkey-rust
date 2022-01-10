@@ -1,4 +1,4 @@
-pub type Program = BlockStmt;
+pub type Program = Vec<Stmt>;
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Stmt {
@@ -6,8 +6,6 @@ pub enum Stmt {
     ReturnStmt(Expr),
     ExprStmt(Expr),
 }
-
-pub type BlockStmt = Vec<Stmt>;
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Expr {
@@ -17,17 +15,23 @@ pub enum Expr {
     InfixExpr(Infix, Box<Expr>, Box<Expr>),
     IfExpr {
         cond: Box<Expr>,
-        consequence: BlockStmt,
-        alternative: Option<BlockStmt>,
+        consequence: Program,
+        alternative: Option<Program>,
     },
-    FnExpr { params: Vec<Ident>, body: BlockStmt },
+    FnExpr {
+        params: Vec<Ident>,
+        body: Program,
+    },
     CallExpr {
         function: Box<Expr>,
         arguments: Vec<Expr>,
     },
     ArrayExpr(Vec<Expr>),
     HashExpr(Vec<(Literal, Expr)>),
-    IndexExpr { array: Box<Expr>, index: Box<Expr> },
+    IndexExpr {
+        array: Box<Expr>,
+        index: Box<Expr>,
+    },
 }
 
 #[derive(PartialEq, Debug, Clone)]

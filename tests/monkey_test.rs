@@ -1,12 +1,12 @@
 extern crate monkey_lib;
 
-use std::fs::File;
-use std::io::prelude::*;
-use monkey_lib::lexer::*;
-use monkey_lib::lexer::token::*;
-use monkey_lib::parser::*;
 use monkey_lib::evaluator::object::*;
 use monkey_lib::evaluator::*;
+use monkey_lib::lexer::token::*;
+use monkey_lib::lexer::*;
+use monkey_lib::parser::*;
+use std::fs::File;
+use std::io::prelude::*;
 
 fn read_file(file_path: String) -> Result<String, ::std::io::Error> {
     let mut file = File::open(file_path)?;

@@ -35,7 +35,7 @@ syntax! {lesser_operator_equal, "<=", Token::LessThanEqual}
 syntax! {greater_operator, ">", Token::GreaterThan}
 syntax! {lesser_operator, "<", Token::LessThan}
 
-pub fn lex_operator<'a>(input: &'a [u8]) -> IResult<&[u8], Token> {
+pub fn lex_operator(input: &[u8]) -> IResult<&[u8], Token> {
     alt((
         equal_operator,
         not_equal_operator,
@@ -63,7 +63,7 @@ syntax! {rbrace_punctuation, "}", Token::RBrace}
 syntax! {lbracket_punctuation, "[", Token::LBracket}
 syntax! {rbracket_punctuation, "]", Token::RBracket}
 
-pub fn lex_punctuations<'a>(input: &'a [u8]) -> IResult<&[u8], Token> {
+pub fn lex_punctuations(input: &[u8]) -> IResult<&[u8], Token> {
     alt((
         comma_punctuation,
         semicolon_punctuation,
@@ -78,7 +78,7 @@ pub fn lex_punctuations<'a>(input: &'a [u8]) -> IResult<&[u8], Token> {
 }
 
 // Strings
-fn pis<'a>(input: &'a [u8]) -> IResult<&[u8], Vec<u8>> {
+fn pis(input: &[u8]) -> IResult<&[u8], Vec<u8>> {
     use std::result::Result::*;
 
     let (i1, c1) = take(1usize)(input)?;
@@ -105,16 +105,16 @@ fn convert_vec_utf8(v: Vec<u8>) -> Result<String, Utf8Error> {
 fn complete_byte_slice_str_from_utf8(c: &[u8]) -> Result<&str, Utf8Error> {
     str::from_utf8(c)
 }
-fn string<'a>(input: &'a [u8]) -> IResult<&[u8], String> {
+fn string(input: &[u8]) -> IResult<&[u8], String> {
     delimited(tag("\""), map_res(pis, convert_vec_utf8), tag("\""))(input)
 }
 
-fn lex_string<'a>(input: &'a [u8]) -> IResult<&[u8], Token> {
-    map(string, |s| Token::StringLiteral(s))(input)
+fn lex_string(input: &[u8]) -> IResult<&[u8], Token> {
+    map(string, Token::StringLiteral)(input)
 }
 
 // Reserved or ident
-fn lex_reserved_ident<'a>(input: &'a [u8]) -> IResult<&[u8], Token> {
+fn lex_reserved_ident(input: &[u8]) -> IResult<&[u8], Token> {
     map_res(
         recognize(pair(
             alt((alpha1, tag("_"))),
@@ -141,22 +141,22 @@ fn complete_str_from_str<F: FromStr>(c: &str) -> Result<F, F::Err> {
 }
 
 // Integers parsing
-fn lex_integer<'a>(input: &'a [u8]) -> IResult<&[u8], Token> {
+fn lex_integer(input: &[u8]) -> IResult<&[u8], Token> {
     map(
         map_res(
             map_res(digit1, complete_byte_slice_str_from_utf8),
             complete_str_from_str,
         ),
-        |i| Token::IntLiteral(i),
+        Token::IntLiteral,
     )(input)
 }
 
 // Illegal tokens
-fn lex_illegal<'a>(input: &'a [u8]) -> IResult<&[u8], Token> {
+fn lex_illegal(input: &[u8]) -> IResult<&[u8], Token> {
     map(take(1usize), |_| Token::Illegal)(input)
 }
 
-fn lex_token<'a>(input: &'a [u8]) -> IResult<&[u8], Token> {
+fn lex_token(input: &[u8]) -> IResult<&[u8], Token> {
     alt((
         lex_operator,
         lex_punctuations,
@@ -167,7 +167,7 @@ fn lex_token<'a>(input: &'a [u8]) -> IResult<&[u8], Token> {
     ))(input)
 }
 
-fn lex_tokens<'a>(input: &'a [u8]) -> IResult<&[u8], Vec<Token>> {
+fn lex_tokens(input: &[u8]) -> IResult<&[u8], Vec<Token>> {
     many0(delimited(multispace0, lex_token, multispace0))(input)
 }
 
@@ -208,11 +208,9 @@ mod tests {
     fn test_lexer2() {
         let input = "let five = 5;\
              let ten = 10;\
-
              let add = fn(x, y) {\
                  x + y;\
              };\
-
              let result = add(five, ten);"
             .as_bytes();
 

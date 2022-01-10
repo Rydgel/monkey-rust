@@ -1,10 +1,10 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-use std::fmt;
-use std::collections::HashMap;
-use std::hash::{Hash, Hasher};
-use parser::ast::*;
 use evaluator::environment::*;
+use parser::ast::*;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::fmt;
+use std::hash::{Hash, Hasher};
+use std::rc::Rc;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Object {
@@ -13,7 +13,7 @@ pub enum Object {
     String(String),
     Array(Vec<Object>),
     Hash(HashMap<Object, Object>),
-    Function(Vec<Ident>, BlockStmt, Rc<RefCell<Environment>>),
+    Function(Vec<Ident>, Program, Rc<RefCell<Environment>>),
     Builtin(String, usize, BuiltinFunction),
     Null,
     ReturnValue(Box<Object>),

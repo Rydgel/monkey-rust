@@ -1,5 +1,4 @@
 use nom::*;
-use std::borrow::Borrow;
 use std::iter::Enumerate;
 use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
 
@@ -157,7 +156,7 @@ impl<'a> InputIter for Tokens<'a> {
     where
         P: Fn(Self::Item) -> bool,
     {
-        self.tok.iter().position(|b| predicate(b))
+        self.tok.iter().position(predicate)
     }
     #[inline]
     fn slice_index(&self, count: usize) -> Result<usize, Needed> {

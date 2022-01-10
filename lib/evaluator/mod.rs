@@ -1,13 +1,13 @@
-pub mod object;
-pub mod environment;
 pub mod builtins;
+pub mod environment;
+pub mod object;
 
-use std::cell::RefCell;
-use std::rc::Rc;
-use std::collections::HashMap;
-use parser::ast::*;
-use evaluator::object::*;
 use evaluator::environment::*;
+use evaluator::object::*;
+use parser::ast::*;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
 
 pub struct Evaluator {
     env: Rc<RefCell<Environment>>,
@@ -21,7 +21,9 @@ impl Default for Evaluator {
 
 impl Evaluator {
     pub fn new() -> Self {
-        Evaluator { env: Rc::new(RefCell::new(Environment::new())) }
+        Evaluator {
+            env: Rc::new(RefCell::new(Environment::new())),
+        }
     }
 
     fn returned(&mut self, object: Object) -> Object {
@@ -36,7 +38,7 @@ impl Evaluator {
         self.returned(return_data)
     }
 
-    pub fn eval_blockstmt(&mut self, prog: &BlockStmt) -> Object {
+    pub fn eval_blockstmt(&mut self, prog: &Program) -> Object {
         match prog.len() {
             0 => Object::Null,
             1 => self.eval_statement(prog[0].clone()),
@@ -113,24 +115,18 @@ impl Evaluator {
     pub fn eval_prefix(&mut self, prefix: &Prefix, expr: Expr) -> Object {
         let object = self.eval_expr(expr);
         match *prefix {
-            Prefix::Not => {
-                match self.otb(object) {
-                    Ok(b) => Object::Boolean(!b),
-                    Err(err) => err,
-                }
-            }
-            Prefix::PrefixPlus => {
-                match self.oti(object) {
-                    Ok(i) => Object::Integer(i),
-                    Err(err) => err,
-                }
-            }
-            Prefix::PrefixMinus => {
-                match self.oti(object) {
-                    Ok(i) => Object::Integer(-i),
-                    Err(err) => err,
-                }
-            }
+            Prefix::Not => match self.otb(object) {
+                Ok(b) => Object::Boolean(!b),
+                Err(err) => err,
+            },
+            Prefix::PrefixPlus => match self.oti(object) {
+                Ok(i) => Object::Integer(i),
+                Err(err) => err,
+            },
+            Prefix::PrefixMinus => match self.oti(object) {
+                Ok(i) => Object::Integer(-i),
+                Err(err) => err,
+            },
         }
     }
 
@@ -203,8 +199,8 @@ impl Evaluator {
     pub fn eval_if(
         &mut self,
         cond: Expr,
-        conse: &BlockStmt,
-        maybe_alter: Option<BlockStmt>,
+        conse: &Program,
+        maybe_alter: Option<Program>,
     ) -> Object {
         let object = self.eval_expr(cond);
         match self.otb(object) {
@@ -222,7 +218,7 @@ impl Evaluator {
         }
     }
 
-    pub fn eval_fn(&mut self, params: Vec<Ident>, body: BlockStmt) -> Object {
+    pub fn eval_fn(&mut self, params: Vec<Ident>, body: Program) -> Object {
         Object::Function(params, body, Rc::clone(&self.env))
     }
 
@@ -244,7 +240,7 @@ impl Evaluator {
         &mut self,
         args_expr: &[Expr],
         params: &[Ident],
-        body: &BlockStmt,
+        body: &Program,
         f_env: &Rc<RefCell<Environment>>,
     ) -> Object {
         if args_expr.len() != params.len() {
@@ -309,8 +305,7 @@ impl Evaluator {
         match (object1, object2) {
             (Object::Integer(i1), Object::Integer(i2)) => Object::Integer(i1 + i2),
             (Object::String(s1), Object::String(s2)) => Object::String(s1 + &s2),
-            (Object::Error(s), _) |
-            (_, Object::Error(s)) => Object::Error(s),
+            (Object::Error(s), _) | (_, Object::Error(s)) => Object::Error(s),
             (x, y) => Object::Error(format!("{:?} and {:?} are not addable", x, y)),
         }
     }
@@ -335,16 +330,14 @@ impl Evaluator {
         let target = self.eval_expr(target_exp);
         let index = self.eval_expr(id_exp);
         match target {
-            Object::Array(arr) => {
-                match self.oti(index) {
-                    Ok(index_number) => {
-                        let null_object = Object::Null;
-                        let object = arr.get(index_number as usize).unwrap_or(&null_object);
-                        object.clone()
-                    }
-                    Err(err) => err,
+            Object::Array(arr) => match self.oti(index) {
+                Ok(index_number) => {
+                    let null_object = Object::Null;
+                    let object = arr.get(index_number as usize).unwrap_or(&null_object);
+                    object.clone()
                 }
-            }
+                Err(err) => err,
+            },
             Object::Hash(hash) => {
                 let name = self.oth(index);
                 match name {
@@ -378,8 +371,7 @@ impl Evaluator {
 
     pub fn otf(&mut self, object: Object) -> Object {
         match object {
-            Object::Function(_, _, _) |
-            Object::Builtin(_, _, _) => object,
+            Object::Function(_, _, _) | Object::Builtin(_, _, _) => object,
             Object::Error(s) => Object::Error(s),
             f => Object::Error(format!("{} is not a valid function", f)),
         }
@@ -400,7 +392,6 @@ impl Evaluator {
         self.oth(object)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -436,11 +427,26 @@ mod tests {
         compare("!!false".as_bytes(), Object::Boolean(false));
         compare("!!true".as_bytes(), Object::Boolean(true));
 
-        compare("!5".as_bytes(), Object::Error("5 is not a bool".to_string()));
-        compare("!1".as_bytes(), Object::Error("1 is not a bool".to_string()));
-        compare("!0".as_bytes(), Object::Error("0 is not a bool".to_string()));
-        compare("!!1".as_bytes(), Object::Error("1 is not a bool".to_string()));
-        compare("!!0".as_bytes(), Object::Error("0 is not a bool".to_string()));
+        compare(
+            "!5".as_bytes(),
+            Object::Error("5 is not a bool".to_string()),
+        );
+        compare(
+            "!1".as_bytes(),
+            Object::Error("1 is not a bool".to_string()),
+        );
+        compare(
+            "!0".as_bytes(),
+            Object::Error("0 is not a bool".to_string()),
+        );
+        compare(
+            "!!1".as_bytes(),
+            Object::Error("1 is not a bool".to_string()),
+        );
+        compare(
+            "!!0".as_bytes(),
+            Object::Error("0 is not a bool".to_string()),
+        );
         // the prefix +
         compare("+1".as_bytes(), Object::Integer(1));
         compare("+5".as_bytes(), Object::Integer(5));
@@ -538,7 +544,7 @@ mod tests {
                  return 1;\
              }\
             "
-            .as_bytes();
+        .as_bytes();
         compare(input, Object::Integer(10));
     }
 
@@ -624,17 +630,17 @@ mod tests {
         let fn_input1 = "let add = fn(a, b, c, d) { return a + b + c + d; };\
              add(1, 2, 3, 4);\
             "
-            .as_bytes();
+        .as_bytes();
 
         let fn_input2 = "let addThree = fn(x) { return x + 3 };\
              addThree(3);\
             "
-            .as_bytes();
+        .as_bytes();
 
         let fn_input3 = "let max = fn(x, y) { if (x > y) { x } else { y } };\
              max(5, 10)\
             "
-            .as_bytes();
+        .as_bytes();
 
         let fn_input4 = "let factorial = fn(n) {\
                 if (n == 0) {\
@@ -645,24 +651,24 @@ mod tests {
              }\
              factorial(5)\
             "
-            .as_bytes();
+        .as_bytes();
 
         let fn_input5 = "let addThree = fn(x) { return x + 3 };\
              let callTwoTimes = fn(x, f) { f(f(x)) }\
              callTwoTimes(3, addThree);\
             "
-            .as_bytes();
+        .as_bytes();
 
         let fn_input6 = "let callTwoTimes = fn(x, f) { f(f(x)) }\
              callTwoTimes(3, fn(x) { x + 1 });\
             "
-            .as_bytes();
+        .as_bytes();
 
         let fn_input7 = "let newAdder = fn(x) { fn(n) { x + n } };\
              let addTwo = newAdder(2);\
              addTwo(2);\
             "
-            .as_bytes();
+        .as_bytes();
 
         compare(fn_input1, Object::Integer(10));
         compare(fn_input2, Object::Integer(6));
@@ -731,7 +737,7 @@ mod tests {
            false: \"hello\" == \"world\"
          };
         "
-            .to_string();
+        .to_string();
 
         compare(
             (input_beg.clone() + &"h[\"one\"]".to_string()).as_bytes(),
@@ -793,7 +799,10 @@ mod tests {
         // head
         compare("head([1])".as_bytes(), Object::Integer(1));
         compare("head([1, 2, 3, 4])".as_bytes(), Object::Integer(1));
-        compare("head([])".as_bytes(), Object::Error("empty array".to_string()));
+        compare(
+            "head([])".as_bytes(),
+            Object::Error("empty array".to_string()),
+        );
         // tail
         compare("tail([1])".as_bytes(), Object::Array(vec![]));
         compare(
@@ -804,7 +813,10 @@ mod tests {
                 Object::Integer(4),
             ]),
         );
-        compare("tail([])".as_bytes(), Object::Error("empty array".to_string()));
+        compare(
+            "tail([])".as_bytes(),
+            Object::Error("empty array".to_string()),
+        );
         // cons
         compare(
             "cons(1, [])".as_bytes(),
@@ -829,7 +841,7 @@ mod tests {
               }\
             };\
             "
-            .to_string();
+        .to_string();
 
         let reduce_decl = "let reduce = fn(f, init, arr) {\
                 if (len(arr) == 0) {\
@@ -840,7 +852,7 @@ mod tests {
                 }\
             };\
             "
-            .to_string();
+        .to_string();
 
         compare(
             (map_decl + "let double = fn(x) { x * 2 }; map(double, [1, 2, 3, 4])").as_bytes(),
