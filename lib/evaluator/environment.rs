@@ -1,6 +1,6 @@
-use evaluator::builtins::*;
-use evaluator::object::*;
-use parser::ast::*;
+use crate::evaluator::builtins::*;
+use crate::evaluator::object::*;
+use crate::parser::ast::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;

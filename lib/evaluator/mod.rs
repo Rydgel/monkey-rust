@@ -2,9 +2,9 @@ pub mod builtins;
 pub mod environment;
 pub mod object;
 
-use evaluator::environment::*;
-use evaluator::object::*;
-use parser::ast::*;
+use crate::evaluator::environment::*;
+use crate::evaluator::object::*;
+use crate::parser::ast::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -396,9 +396,9 @@ impl Evaluator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use lexer::token::*;
-    use lexer::*;
-    use parser::*;
+    use crate::lexer::token::*;
+    use crate::lexer::*;
+    use crate::parser::*;
 
     fn compare(input: &[u8], object: Object) {
         let (_, r) = Lexer::lex_tokens(input).unwrap();

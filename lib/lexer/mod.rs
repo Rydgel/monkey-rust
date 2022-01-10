@@ -11,7 +11,7 @@ use std::str::FromStr;
 use std::str::Utf8Error;
 
 pub mod token;
-use lexer::token::*;
+use crate::lexer::token::*;
 
 macro_rules! syntax {
     ($func_name: ident, $tag_string: literal, $output_token: expr) => {

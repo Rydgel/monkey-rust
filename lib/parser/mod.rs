@@ -1,7 +1,7 @@
 use nom::*;
 
 pub mod ast;
-use lexer::token::*;
+use crate::lexer::token::*;
 use nom::branch::*;
 use nom::bytes::complete::take;
 use nom::combinator::{map, opt, verify};
@@ -9,7 +9,7 @@ use nom::error::{Error, ErrorKind};
 use nom::multi::many0;
 use nom::sequence::*;
 use nom::Err;
-use parser::ast::*;
+use crate::parser::ast::*;
 use std::result::Result::*;
 
 macro_rules! tag_token (
@@ -326,7 +326,7 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use lexer::*;
+    use crate::lexer::*;
 
     fn assert_input_with_program(input: &[u8], expected_results: Program) {
         let (_, r) = Lexer::lex_tokens(input).unwrap();

@@ -1,5 +1,5 @@
-use evaluator::object::*;
-use parser::ast::*;
+use crate::evaluator::object::*;
+use crate::parser::ast::*;
 
 pub struct BuiltinsFunctions;
 

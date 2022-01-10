@@ -11,7 +11,7 @@ use nom::Err;
 use std::fs::File;
 use std::io::prelude::*;
 
-use cmd::*;
+use crate::cmd::*;
 mod cmd;
 
 fn read_file(file_path: String) -> Result<String, ::std::io::Error> {
