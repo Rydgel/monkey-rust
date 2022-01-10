@@ -2,6 +2,7 @@ use nom::*;
 
 pub mod ast;
 use crate::lexer::token::*;
+use crate::parser::ast::*;
 use nom::branch::*;
 use nom::bytes::complete::take;
 use nom::combinator::{map, opt, verify};
@@ -9,7 +10,6 @@ use nom::error::{Error, ErrorKind};
 use nom::multi::many0;
 use nom::sequence::*;
 use nom::Err;
-use crate::parser::ast::*;
 use std::result::Result::*;
 
 macro_rules! tag_token (
@@ -217,8 +217,8 @@ fn go_parse_pratt_expr(input: Tokens, precedence: Precedence, left: Expr) -> IRe
     if t1.tok.is_empty() {
         Ok((i1, left))
     } else {
-        let preview = t1.tok[0].clone();
-        let p = infix_op(&preview);
+        let preview = &t1.tok[0];
+        let p = infix_op(preview);
         match p {
             (Precedence::PCall, _) if precedence < Precedence::PCall => {
                 let (i2, left2) = parse_call_expr(input, left)?;
@@ -242,8 +242,8 @@ fn parse_infix_expr(input: Tokens, left: Expr) -> IResult<Tokens, Expr> {
     if t1.tok.is_empty() {
         Err(Err::Error(error_position!(input, ErrorKind::Tag)))
     } else {
-        let next = t1.tok[0].clone();
-        let (precedence, maybe_op) = infix_op(&next);
+        let next = &t1.tok[0];
+        let (precedence, maybe_op) = infix_op(next);
         match maybe_op {
             None => Err(Err::Error(error_position!(input, ErrorKind::Tag))),
             Some(op) => {

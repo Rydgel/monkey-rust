@@ -44,8 +44,7 @@ impl Environment {
         }
     }
 
-    pub fn set(&mut self, name: &str, val: &Object) {
-        let val = val.clone();
+    pub fn set(&mut self, name: &str, val: Object) {
         self.store.insert(name.to_string(), val);
     }
 
