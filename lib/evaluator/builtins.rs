@@ -26,16 +26,13 @@ impl BuiltinsFunctions {
 }
 
 fn add_builtin(name: &str, param_num: usize, func: BuiltinFunction) -> (Ident, Object) {
-    let name_string = String::from(name);
-    (
-        Ident(name_string.clone()),
-        Object::Builtin(name_string, param_num, func),
-    )
+    let name = name.to_owned();
+    (Ident(name.clone()), Object::Builtin(name, param_num, func))
 }
 
 fn bprint_fn(args: Vec<Object>) -> Result<Object, String> {
     match args.get(0) {
-        Some(&Object::String(ref t)) => {
+        Some(Object::String(t)) => {
             println!("{}", t);
             Ok(Object::Null)
         }
@@ -49,29 +46,29 @@ fn bprint_fn(args: Vec<Object>) -> Result<Object, String> {
 
 fn blen_fn(args: Vec<Object>) -> Result<Object, String> {
     match args.get(0) {
-        Some(&Object::String(ref s)) => Ok(Object::Integer(s.len() as i64)),
-        Some(&Object::Array(ref arr)) => Ok(Object::Integer(arr.len() as i64)),
+        Some(Object::String(s)) => Ok(Object::Integer(s.len() as i64)),
+        Some(Object::Array(arr)) => Ok(Object::Integer(arr.len() as i64)),
         _ => Err(String::from("invalid arguments for len")),
     }
 }
 
 fn bhead_fn(args: Vec<Object>) -> Result<Object, String> {
-    match args.get(0) {
-        Some(&Object::Array(ref arr)) => match arr.first() {
+    match args.into_iter().next() {
+        Some(Object::Array(arr)) => match arr.into_iter().next() {
             None => Err(String::from("empty array")),
-            Some(x) => Ok(x.clone()),
+            Some(x) => Ok(x),
         },
         _ => Err(String::from("invalid arguments for head")),
     }
 }
 
 fn btail_fn(args: Vec<Object>) -> Result<Object, String> {
-    match args.get(0) {
-        Some(&Object::Array(ref arr)) => match arr.len() {
+    match args.into_iter().next() {
+        Some(Object::Array(mut arr)) => match arr.len() {
             0 => Err(String::from("empty array")),
             _ => {
-                let tail = &arr[1..];
-                Ok(Object::Array(tail.to_vec()))
+                arr.remove(0);
+                Ok(Object::Array(arr))
             }
         },
         _ => Err(String::from("invalid arguments for tail")),
@@ -79,14 +76,11 @@ fn btail_fn(args: Vec<Object>) -> Result<Object, String> {
 }
 
 fn bcons_fn(args: Vec<Object>) -> Result<Object, String> {
-    let mut args = args.iter();
+    let mut args = args.into_iter();
     match (args.next(), args.next()) {
-        (Some(o), Some(&Object::Array(ref os))) => {
-            let mut vectors = vec![o.clone()];
-            for object in os {
-                vectors.push(object.clone());
-            }
-            Ok(Object::Array(vectors))
+        (Some(o), Some(Object::Array(mut os))) => {
+            os.insert(0, o);
+            Ok(Object::Array(os))
         }
         _ => Err(String::from("invalid arguments for cons")),
     }

@@ -37,7 +37,7 @@ fn main() {
                 let parsed = Parser::parse_tokens(tokens);
                 match parsed {
                     Ok((_, program)) => {
-                        let eval = evaluator.eval_program(&program);
+                        let eval = evaluator.eval_program(program);
                         println!("{}", eval);
                     }
                     Err(Err::Error(_)) => println!("Parser error"),

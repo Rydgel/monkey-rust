@@ -27,10 +27,10 @@ impl Object {
         matches!(*self, Object::ReturnValue(_))
     }
 
-    pub fn returned(&self) -> Self {
-        match *self {
-            Object::ReturnValue(ref o) => *o.clone(),
-            ref o => o.clone(),
+    pub fn returned(self) -> Self {
+        match self {
+            Object::ReturnValue(o) => *o,
+            o => o,
         }
     }
 }

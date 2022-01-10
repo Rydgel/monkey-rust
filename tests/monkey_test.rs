@@ -22,7 +22,7 @@ fn test_example_hash() {
     let (_, lex_tokens) = Lexer::lex_tokens(code_string.as_bytes()).unwrap();
     let tokens = Tokens::new(&lex_tokens);
     let (_, program) = Parser::parse_tokens(tokens).unwrap();
-    let eval = evaluator.eval_program(&program);
+    let eval = evaluator.eval_program(program);
     assert_eq!(eval, Object::Null);
 }
 
@@ -33,6 +33,6 @@ fn test_reduce() {
     let (_, lex_tokens) = Lexer::lex_tokens(code_string.as_bytes()).unwrap();
     let tokens = Tokens::new(&lex_tokens);
     let (_, program) = Parser::parse_tokens(tokens).unwrap();
-    let eval = evaluator.eval_program(&program);
+    let eval = evaluator.eval_program(program);
     assert_eq!(eval, Object::Null);
 }
