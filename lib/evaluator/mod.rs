@@ -716,39 +716,39 @@ mod tests {
         .to_string();
 
         compare(
-            (input_beg.clone() + &"h[\"one\"]".to_string()).as_bytes(),
+            (input_beg.clone() + "h[\"one\"]").as_bytes(),
             Object::Integer(1),
         );
         compare(
-            (input_beg.clone() + &"let s = \"two\"; h[s]".to_string()).as_bytes(),
+            (input_beg.clone() + "let s = \"two\"; h[s]").as_bytes(),
             Object::Integer(2),
         );
         compare(
-            (input_beg.clone() + &"h[3]".to_string()).as_bytes(),
+            (input_beg.clone() + "h[3]").as_bytes(),
             Object::Integer(3),
         );
         compare(
-            (input_beg.clone() + &"h[2 + 2]".to_string()).as_bytes(),
+            (input_beg.clone() + "h[2 + 2]").as_bytes(),
             Object::Integer(4),
         );
         compare(
-            (input_beg.clone() + &"h[true]".to_string()).as_bytes(),
+            (input_beg.clone() + "h[true]").as_bytes(),
             Object::Boolean(true),
         );
         compare(
-            (input_beg.clone() + &"h[5 < 1]".to_string()).as_bytes(),
+            (input_beg.clone() + "h[5 < 1]").as_bytes(),
             Object::Boolean(false),
         );
         compare(
-            (input_beg.clone() + &"h[100]".to_string()).as_bytes(),
+            (input_beg.clone() + "h[100]").as_bytes(),
             Object::Null,
         );
         compare(
-            (input_beg.clone() + &"h[[]]".to_string()).as_bytes(),
+            (input_beg.clone() + "h[[]]").as_bytes(),
             Object::Error("[] is not hashable".to_string()),
         );
         compare(
-            (input_beg + &"3[true];".to_string()).as_bytes(),
+            (input_beg + "3[true];").as_bytes(),
             Object::Error("unexpected index target: 3".to_string()),
         );
     }
